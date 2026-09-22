@@ -1,11 +1,10 @@
 <template>
   <nav class="navbar">
-    <div class="logo">XestiónApp</div>
+    <div class="logo">Sanidad Teis</div>
 
-    <!-- NUEVO -->
-    <button class="hamburger" @click="isOpen = !isOpen">☰</button>
+    <!-- NUEVO 
+    <button class="hamburger" @click="isOpen = !isOpen">☰</button> -->
 
-    <!-- MODIFICADO -->
     <ul :class="['menu', { open: isOpen }]">
       <li><RouterLink to="/">Inicio</RouterLink></li>
       <li><RouterLink to="/xestion-pacientes">Pacientes</RouterLink></li>

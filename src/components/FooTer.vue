@@ -1,9 +1,10 @@
 <template>
   <footer class="footer-content footer">
     <ul class="link-aviso">
-     <router-link to="/avisolegal" target="_blank" color="white" >Aviso Legal</router-link>
+      <router-link to="/avisolegal" target="_blank" color="white" >Aviso Legal</router-link>
+      <spam>  © {{ new Date().getFullYear() }} Sanidad Teis — Desenvolvido en Vue 3 por </spam> 
+      <a href="https://github.com/P5tyos" target="_blank"> Gergely Horvath </a>
     </ul>
-     <p>© {{ new Date().getFullYear() }} Sanidad Teis — Desenvolvido en Vue 3 </p>
   </footer>
 </template>
 
@@ -20,17 +21,25 @@
 }
 
 .link-aviso {
-  display: block;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
   margin-top: 6px;
-  color: #f9d342;
+  color: #f5f5f3;
+}
+
+.link-aviso a {
+  color: #c2a203;
   cursor: pointer;
 }
 
-.footer-content {
-  display: flex;
-  justify-content: center; /* centra horizontalmente */
-  align-items: center;      /* alinea verticalmente na mesma liña */
-  gap: 5rem;                /* espazo entre o texto e o enlace */
+.link-aviso a:visited {
+  color: #e7d08b;
 }
 
+.link-aviso a:hover {
+  color: #ffffff;
+}
 </style>

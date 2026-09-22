@@ -15,9 +15,8 @@
 
 <style>
 /* 👇 Estilos globales mínimos */
-:global(body) {
+body {
   margin: 0;               /* quita el margen por defecto del body */
-  background: #f6f6f6;     /* color de fondo general */
 }
 
 #app {

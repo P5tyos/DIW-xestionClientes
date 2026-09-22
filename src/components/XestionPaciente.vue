@@ -27,7 +27,7 @@
       </div>
       <div class="fila">
         <div class="campo campo-nacimiento">
-          <label>Fecha de nacemento:</label>
+          <label>Fecha nacemento:</label>
           <input v-model="novoPaciente.nacimiento" type="date" />
         </div>
         <div class="campo campo-correo">
@@ -138,6 +138,8 @@
             </optgroup>
           </select> 
         </div>
+      </div>
+      <div class="fila">
         <button
           type="submit"
           class="btn-guardar"
@@ -155,7 +157,7 @@
           <th>DNI/CIF</th>
           <th>Nome</th>
           <th>Apelido</th>
-          <th>Fecha de nacemento</th>
+          <th>Fecha nacemento</th>
           <th>Telefono</th>
           <th>Correo</th>
           <th>Dirección</th>
@@ -412,6 +414,11 @@ form {
   /* ocupa menos espacio */
   border-radius: 0px;
 }
+
+.campo-nacimiento label {
+  white-space: nowrap;
+}
+
 .campo-telefono {
   flex: 1;
   /* ocupa menos espacio */
@@ -471,7 +478,7 @@ form {
   /* ocupa todo el espacio restante */
   padding: 0.5rem;
   border: 1px solid #ddd;
-  border-radius: 0px;
+  border-radius: 6px;
   box-sizing: border-box;
 }
 
@@ -520,6 +527,10 @@ td {
   text-align: left;
 }
 
+td:last-child {
+  white-space: nowrap;
+}
+
 th {
   text-align: center;
   background-color: #f8f9fa;
@@ -531,6 +542,7 @@ h4 {
   background-color: #068311;
   color: white;
 }
+
 input.campo-erro {
   border-color: #f28b82 !important;
   background-color: #ffe6e6;
