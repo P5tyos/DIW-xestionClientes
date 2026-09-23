@@ -63,80 +63,12 @@
         </div>
         <div class="campo campo-provincia">
           <label>Provincia:</label>
-          <select v-model="novoPaciente.provincia">
-            <option value="">Selecciona unha provincia</option>
-            <option value="A Coruña">A Coruña</option>
-            <option value="Lugo">Lugo</option>
-            <option value="Ourense">Ourense</option>
-            <option value="Pontevedra">Pontevedra</option>
-          </select> 
-        </div>
-        <div class="campo campo-municipio">
-          <label>Municipio:</label>
-          <select v-model="novoPaciente.municipio">
-            <option value="">Selecciona un municipio</option>
-            <optgroup v-if="novoPaciente.provincia === 'A Coruña'">
-              <option value="A Coruña">A Coruña</option>
-              <option value="Santiago de Compostela">Santiago de Compostela</option>
-              <option value="Ferrol">Ferrol</option>
-              <option value="Oleiros">Oleiros</option>
-              <option value="Culleredo">Culleredo</option>
-              <option value="Arteixo">Arteixo</option>
-              <option value="Carballo">Carballo</option>
-              <option value="Cambre">Cambre</option>
-              <option value="Narón">Narón</option>
-              <option value="Betanzos">Betanzos</option>
-              <option value="Ames">Ames</option>
-              <option value="Teo">Teo</option>
-            </optgroup>
-            <optgroup v-if="novoPaciente.provincia === 'Lugo'">
-              <option value="Burela">Burela</option>
-              <option value="Foz">Foz</option>
-              <option value="Ribadeo">Ribadeo</option>
-              <option value="Lugo">Lugo</option>
-              <option value="Monforte de Lemos">Monforte de Lemos</option>
-              <option value="Sarria">Sarria</option>
-              <option value="Mondoñedo">Mondoñedo</option>
-              <option value="Viveiro">Viveiro</option>
-              <option value="A Pontenova">A Pontenova</option>
-              <option value="A Fonsagrada">A Fonsagrada</option>
-              <option value="O Vicedo">O Vicedo</option>
-              <option value="O Corgo">O Corgo</option>
-            </optgroup>
-            <optgroup v-if="novoPaciente.provincia === 'Ourense'">
-              <option value="Ourense">Ourense</option>
-              <option value="Verín">Verín</option>
-              <option value="O Barco de Valdeorras">O Barco de Valdeorras</option>
-              <option value="Ribadavia">Ribadavia</option>
-              <option value="Allariz">Allariz</option>
-              <option value="Celanova">Celanova</option>
-              <option value="A Rúa">A Rúa</option>
-              <option value="O Carballiño">O Carballiño</option>
-              <option value="Xinzo de Limia">Xinzo de Limia</option>
-              <option value="A Peroxa">A Peroxa</option>
-              <option value="A Mezquita">A Mezquita</option>
-              <option value="A Veiga">A Veiga</option>
-            </optgroup>
-            <optgroup v-if="novoPaciente.provincia === 'Pontevedra'">
-              <option value="Pontevedra">Pontevedra</option>
-              <option value="Vigo">Vigo</option>
-              <option value="Vilagarcía de Arousa">Vilagarcía de Arousa</option>
-              <option value="Marín">Marín</option>
-              <option value="Redondela">Redondela</option>
-              <option value="Cangas">Cangas</option>
-              <option value="Moaña">Moaña</option>
-              <option value="Bueu">Bueu</option>
-              <option value="Ponteareas">Ponteareas</option>
-              <option value="O Porriño">O Porriño</option>
-              <option value="A Guarda">A Guarda</option>
-              <option value="Baiona">Baiona</option>
-              <option value="Tui">Tui</option>
-              <option value="Salceda de Caselas">Salceda de Caselas</option>
-              <option value="Soutomaior">Soutomaior</option>
-              <option value="Forcarei">Forcarei</option>
-              <option value="A Lama">A Lama</option>
-            </optgroup>
-          </select> 
+          <select id="provincia" v-model="novoPaciente.provincia">
+            <option value="">Selecciona una provincia</option>
+            <option v-for="provincia in provincias" :key="provincia.id" :value="provincia.id">
+              {{ provincia.nm }}
+            </option>
+          </select>
         </div>
       </div>
       <div class="fila">
@@ -194,8 +126,16 @@
 /// Zona de declaracións
 
 import { ref, reactive, onMounted } from "vue";
+import { obtenerProvincias } from "../api/municipios.js";
 
 const pacientes = ref([]); //almacena la lista de pacientes e os seus cambios
+const provincias = ref([]); //almacena a lista de provincias e os seus cambios
+
+const documentoInvalido = ref(false)
+const correoInvalido = ref(false)
+const telefonoIncorrecto = ref(false)
+
+const LETRAS_DNI = "TRWAGMYFPDXBNJZSQVHLCKE"
 
 const novoPaciente = reactive({
   dni: "",
@@ -209,15 +149,10 @@ const novoPaciente = reactive({
   municipio: ""
 });
 
-const documentoInvalido = ref(false)
-const correoInvalido = ref(false)
-const telefonoIncorrecto = ref(false)
-
-const LETRAS_DNI = "TRWAGMYFPDXBNJZSQVHLCKE"
 
 /// Zona de ciclo de vida
 
-onMounted(() => {
+onMounted(async() => {
   //sempre se cargan estos pacientes de exemplo ao iniciar o componente
   pacientes.value = [
     {
@@ -266,7 +201,9 @@ onMounted(() => {
       municipio: "Cangas"
     },
   ];
+  provincias.value = await obtenerProvincias(); //carga a lista de provincias desde a API
 });
+
 
 /// Zona de métodos ou funcións
 
