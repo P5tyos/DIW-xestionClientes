@@ -63,10 +63,19 @@
         </div>
         <div class="campo campo-provincia">
           <label>Provincia:</label>
-          <select id="provincia" v-model="novoPaciente.provincia">
+          <select id="provincia" v-model="novoPaciente.provincia" @change="cargarMunicipios"> //@change para cargar los municipios cuando se selecciona una provincia
             <option value="">Selecciona una provincia</option>
             <option v-for="provincia in provincias" :key="provincia.id" :value="provincia.id">
               {{ provincia.nm }}
+            </option>
+          </select>
+        </div>
+        <div class="campo campo-municipio">
+          <label>Municipio:</label>
+          <select id="municipio" v-model="novoPaciente.municipio">
+            <option value="">Selecciona un municipio</option>
+            <option v-for="municipio in municipios" :key="municipio.id" :value="municipio.id">
+              {{ municipio.nm }}
             </option>
           </select>
         </div>
@@ -126,10 +135,11 @@
 /// Zona de declaracións
 
 import { ref, reactive, onMounted } from "vue";
-import { obtenerProvincias } from "../api/municipios.js";
+import { obtenerMunicipios, obtenerProvincias } from "../api/municipios.js";
 
 const pacientes = ref([]); //almacena la lista de pacientes e os seus cambios
 const provincias = ref([]); //almacena a lista de provincias e os seus cambios
+const municipios = ref([]);
 
 const documentoInvalido = ref(false)
 const correoInvalido = ref(false)
@@ -203,6 +213,16 @@ onMounted(async() => {
   ];
   provincias.value = await obtenerProvincias(); //carga a lista de provincias desde a API
 });
+
+// function para cargar todos los munic
+async function cargarMunicipios() {
+  if (novoPaciente.provincia === "") {
+    municipios.value=[];
+    return;
+  }
+}
+//obtener los municipios de la provincia seleccionada
+municipios.value = await obtenerMunicipios(novoPaciente.provincia);
 
 
 /// Zona de métodos ou funcións

@@ -12,3 +12,13 @@ export async function obtenerProvincias() {   //this line is an async function t
     
     return respuesta.data.provincias  // we are only returning the provinces data by selcting the name of that array (.provincias).
 }
+
+//obtener los municipios de una provincia
+export async function obtenerMunicipios(idProvincia) {
+    const respuesta = await axios.get(URL)
+    const municipios = respuesta.data.municipios  // aqui el variable municipios contiene todos los municipios del array en el fichero municipo.json
+
+    return municipios.filter(
+        municipio => municipio.id.substring(0,2) === idProvincia  //filtramos los municipios que coinciden los dos primeros numeros de la provincia
+    )
+}
