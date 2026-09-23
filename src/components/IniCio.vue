@@ -25,7 +25,7 @@
       <div class="tarjeta">
         <h2>Aviso Legal</h2>
         <p>Información sobre privacidad y condiciones de uso.</p>
-        <router-link to="/aviso-legal">Consultar</router-link>
+        <router-link to="/avisolegal">Consultar</router-link>
       </div>
     </section>
 
