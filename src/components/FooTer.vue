@@ -2,7 +2,7 @@
   <footer class="footer-content footer">
     <ul class="link-aviso">
       <router-link to="/avisolegal" color="white" >Aviso Legal</router-link>
-      <spam>  © {{ new Date().getFullYear() }} Sanidad Teis — Desenvolvido en Vue 3 por </spam> 
+      <span>  © {{ new Date().getFullYear() }} Sanidad Teis — Desenvolvido en Vue 3 por </span> 
       <a href="https://github.com/P5tyos" target="_blank"> Gergely Horvath </a>
     </ul>
   </footer>
