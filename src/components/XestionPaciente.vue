@@ -222,7 +222,7 @@ async function cargarMunicipios() {
   }
 }
 //obtener los municipios de la provincia seleccionada
-municipios.value = await obtenerMunicipios(novoPaciente.provincia);
+//municipios.value = await obtenerMunicipios(novoPaciente.provincia); 
 
 
 /// Zona de métodos ou funcións
