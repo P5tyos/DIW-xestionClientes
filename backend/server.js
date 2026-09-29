@@ -2,11 +2,14 @@ import express from 'express'
 import fs from 'fs'
 import cors from 'cors'
 import "dotenv/config";
-import { MongoClient } from 'mongodb'; //importa la conn??
+import mongoose from "mongoose"
+import pacientesRutas from './rutas/pacientes.rutas';
 
 //creamos la aplicación de express
 const app = express()
 app.use(cors());
+app.use(express.json());
+app.use('/api/pacientes', pacientesRutas);
 
 //usa el port devinido en las variables del entorno y si no coge el 3000
 const PORT = process.env.PORT || 3000;
@@ -15,13 +18,13 @@ const PORT = process.env.PORT || 3000;
 const MONGO_URI = process.env.MONGO_URI;
 
 //creamos el cliente mongoDB (la cadena de connexion)
-const client = new MongoClient(MONGO_URI);
+//const client = new MongoClient(MONGO_URI);        creo que ya no hace falta
 
 //ruta de la api para obtener provincias y municipios
 app.get('/api/municipios', (req, res) => {
     console.log('Petición recibida')
 
-    //leemos el fichero Json
+//leemos el fichero Json
     const datos = fs.readFileSync(
         './backend/data/municipios.json', 
         'utf-8'
@@ -34,12 +37,13 @@ const datosJson = JSON.parse(datos)
 res.json(datosJson)
 })
 
+
 //ponemos el servidor a escuchar en el puerto 3000
 
 async function iniciaServer() {
     try {
         //conncetamos con mongo db
-        await client.connect();
+        await mongoose.connect(MONGO_URI);
         console.log("Connectado a MongoDB");
         app.listen(PORT, () => {
             console.log(`Servidor funcionando en http://localhost:${PORT}`);

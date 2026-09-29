@@ -1,4 +1,3 @@
-import { Collection } from "mongodb";
 import mongoose from "mongoose";
 
 //modelo Paciente
@@ -7,9 +6,9 @@ const PacienteSchema = new mongoose.Schema({
     nomepac: { type: String, required: true },
     apelpac: { type: String, required: true },
     nacipac: { type: String, required: true },
-    mailpac: { type: String, required: true },
+    mailpac: { type: String, required: false },
     movilpac: { type: String, required: true },
-    dirpac: { type: String, required: true },
+    dirpac: { type: String, required: false },
     propac: { type: String, required: true },
     munipac: { type: String, required: true },
     },

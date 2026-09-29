@@ -6,7 +6,7 @@
         <div class="campo campo-dni">
           <label>DNI/CIF:</label>
           <input
-            v-model="novoPaciente.dni"
+            v-model="novoPaciente.dnipac"
             type="text"
             required
             style="text-align: center;"
@@ -16,19 +16,19 @@
         </div>
         <div class="campo campo-nome">
           <label>Nome:</label>
-          <input v-model="novoPaciente.nome" type="text" required 
-          @blur="novoPaciente.nome = formatearNome(novoPaciente.nome)"/>
+          <input v-model="novoPaciente.nompac" type="text" required 
+          @blur="novoPaciente.nompac = formatearNome(novoPaciente.nompac)"/>
         </div>
         <div class="campo campo-apellido">
           <label>Apelido:</label>
-          <input v-model="novoPaciente.apellido" type="text" required 
-          @blur="novoPaciente.apellido = formatearApellido(novoPaciente.apellido)"/>
+          <input v-model="novoPaciente.apelpac" type="text" required 
+          @blur="novoPaciente.apelpac = formatearApellido(novoPaciente.apelpac)"/>
         </div>
       </div>
       <div class="fila">
         <div class="campo campo-nacimiento">
           <label>Fecha nacemento:</label>
-          <input v-model="novoPaciente.nacimiento" type="date" />
+          <input v-model="novoPaciente.nacipac" type="date" />
         </div>
         <div class="campo campo-correo">
           <label>Correo:</label>
@@ -45,7 +45,7 @@
         <div class="campo campo-telefono">
           <label>Telefono:</label>
           <input 
-            v-model="novoPaciente.telefono" 
+            v-model="novoPaciente.movilpacno" 
             type="text" 
             required
             maxlength="9"
@@ -59,23 +59,23 @@
       <div class="fila">
         <div class="campo campo-direccion">
           <label>Dirección:</label>
-          <input v-model="novoPaciente.direccion" type="text" />
+          <input v-model="novoPaciente.dirpac" type="text" />
         </div>
         <div class="campo campo-provincia">
           <label>Provincia:</label>
-          <select id="provincia" v-model="novoPaciente.provincia" @change="cargarMunicipios"> //@change para cargar los municipios cuando se selecciona una provincia
+          <select id="provincia" v-model="novoPaciente.propac" @change="cargarMunicipios"> //@change para cargar los municipios cuando se selecciona una provincia
             <option value="">Selecciona una provincia</option>
             <option v-for="provincia in provincias" :key="provincia.id" :value="provincia.id">
-              {{ provincia.nm }}
+              {{ propac.nm }}
             </option>
           </select>
         </div>
         <div class="campo campo-municipio">
           <label>Municipio:</label>
-          <select id="municipio" v-model="novoPaciente.municipio">
+          <select id="municipio" v-model="novoPaciente.munipac">
             <option value="">Selecciona un municipio</option>
             <option v-for="municipio in municipios" :key="municipio.id" :value="municipio.id">
-              {{ municipio.nm }}
+              {{ munipac.nm }}
             </option>
           </select>
         </div>
@@ -84,7 +84,7 @@
         <button
           type="submit"
           class="btn-guardar"
-          :disabled="novoPaciente.dni === '' || novoPaciente.nome === ''"
+          :disabled="novoPaciente.dnipac === '' || novoPaciente.nompac === ''"
         >
           Gardar
         </button>
@@ -110,15 +110,15 @@
       <tbody>
         <tr v-for="(p, index) in pacientes" :key="index">
           <td>{{ index + 1 }}</td>
-          <td style="text-align: center">{{ p.dni }}</td>
-          <td>{{ p.nome }}</td>
-          <td>{{ p.apellido }}</td>
-          <td>{{ p.nacimiento }}</td>
-          <td>{{ p.telefono }}</td>
-          <td>{{ p.correo }}</td>
-          <td style="text-align: center">{{ p.direccion }}</td>
-          <td style="text-align: center">{{ p.provincia }}</td>
-          <td style="text-align: center">{{ p.municipio }}</td>
+          <td style="text-align: center">{{ p.dnipac }}</td>
+          <td>{{ p.nompac }}</td>
+          <td>{{ p.apelpac }}</td>
+          <td>{{ p.nacipac }}</td>
+          <td>{{ p.movilpacno }}</td>
+          <td>{{ p.mailpac }}</td>
+          <td style="text-align: center">{{ p.dirpac }}</td>
+          <td style="text-align: center">{{ p.propac }}</td>
+          <td style="text-align: center">{{ p.munipac }}</td>
           <td style="text-align: center">
             <button @click="editarPaciente(index)" title="Editar">✏️</button>
             <button @click="eliminarPaciente(index)" title="Eliminar">🗑️</button>
@@ -136,6 +136,7 @@
 
 import { ref, reactive, onMounted } from "vue";
 import { obtenerMunicipios, obtenerProvincias } from "../api/municipios.js";
+import { savePaciente } from "../api/pacientes.js";
 
 const pacientes = ref([]); //almacena la lista de pacientes e os seus cambios
 const provincias = ref([]); //almacena a lista de provincias e os seus cambios
@@ -148,15 +149,15 @@ const telefonoIncorrecto = ref(false)
 const LETRAS_DNI = "TRWAGMYFPDXBNJZSQVHLCKE"
 
 const novoPaciente = reactive({
-  dni: "",
-  nome: "",
-  apellido: "",
-  nacimiento: "",
-  telefono: "",
-  correo: "",
-  direccion: "",
-  provincia: "",
-  municipio: ""
+  dnipac: "",
+  nomepac: "",
+  apelpac: "",
+  nacipac: "",
+  mailpac: "",
+  movilpac: "",
+  dirpac: "",
+  propac: "",
+  munipac: ""
 });
 
 
@@ -164,82 +165,46 @@ const novoPaciente = reactive({
 
 onMounted(async() => {
   //sempre se cargan estos pacientes de exemplo ao iniciar o componente
-  pacientes.value = [
-    {
-      dni: "A000000C",
-      nome: "Soldaduras SL",
-      apellido: "Sánchez",
-      nacimiento: "1990-01-01",
-      correo: "soldadura@email.com",
-      telefono: "981123456",
-      direccion: "Calle Principal, 123" ,
-      provincia: "A Coruña",
-      municipio: "A Coruña"
-
-    },
-    {
-      dni: "0000000C",
-      nome: "María Pérez",
-      apellido: "Pérez",
-      nacimiento: "1985-01-30",
-      correo: "maria@email.com",
-      telefono: "981654321",
-      direccion: "Calle Secundaria, 456",
-      provincia: "Lugo",
-      municipio: "Lugo"
-    },
-    {
-      dni: "B1234567D",
-      nome: "Xosé López",
-      apellido: "López",
-      nacimiento: "1992-12-10",
-      correo: "xose@email.com",
-      provincia: "Ourense",
-      telefono: "981987654",
-      direccion: "Calle Terciaria, 789",
-      municipio: "Ourense"
-    },
-    {
-      dni: "C9876543E",
-      nome: "Construcións Modernas",
-      apellido: "Modernas",
-      nacimiento: "1988-08-20",
-      correo: "construcion@email.com",
-      telefono: "981456789",
-      direccion: "Calle Cuarta, 101",
-      provincia: "Pontevedra",
-      municipio: "Cangas"
-    },
-  ];
+  //pacientes.value = await obtenerPacientes;   //carga los usuarios guardados
   provincias.value = await obtenerProvincias(); //carga a lista de provincias desde a API
 });
 
 // function para cargar todos los munic
 async function cargarMunicipios() {
-  if (novoPaciente.provincia === "") {
+  if (novoPaciente.propac === "") {
     municipios.value=[];
     return;
   }
 
+
 //obtener los municipios de la provincia seleccionada
-municipios.value = await obtenerMunicipios(novoPaciente.provincia); 
+municipios.value = await obtenerMunicipios(novoPaciente.propac); 
 }
 
 /// Zona de métodos ou funcións
 
-function gardarPaciente() {
-  pacientes.value.push({ ...novoPaciente }); //engade o novo paciente á lista (copia do obxecto)
-  Object.assign(novoPaciente, {
-    dni: "",
-    nome: "",
-    apellido: "",
-    nacimiento: "",
-    correo: "",
-    provincia: "",
-    telefono: "",
-    direccion: "",
-    municipio: ""
-  }); //reinicia o formulario
+async function guardarPaciente() {
+  try {
+        //tomar el nombre del municipio seleccionado y asignarlo a novoPaciente.munipac
+        //y de la provincia seleccionado y asignarlo a novoPaciente.propac
+        const provincia = provincias.value.find(
+            p => p.id === novoPaciente.propac
+          );
+
+          const municipio = municipios.value.find(
+            m => m.id === novoPaciente.munipac
+          );
+
+        novoPaciente.propac = provincia.nm;
+        novoPaciente.munipac = municipio.nm;
+
+    		const pacienteGuardado = await savePaciente(novoPaciente);
+    		pacientes.value.push(pacienteGuardado);
+    		console.log("Paciente gardado correctamente");
+        // getPacientes(); // Actualiza la lista de pacientes después de guardar
+  } catch (error) {
+    console.error("Error ao gardar paciente:", error);
+  }
 }
 
 function eliminarPaciente(index) {
@@ -266,41 +231,41 @@ function validarNIE(valor) {
 }
 
 function validarDocumento() {
-  const valor = novoPaciente.dni.trim().toUpperCase()
+  const valor = novoPaciente.dnipac.trim().toUpperCase()
   const esValido = validarDNI(valor) || validarNIE(valor)
 
   documentoInvalido.value = !esValido
 
   if (esValido) {
-    novoPaciente.dni = valor
+    novoPaciente.dnipac = valor
   } else {
-    novoPaciente.dni = ""
+    novoPaciente.dnipac = ""
   }
   
 }
 function validarCorreo() {
-  const valor = novoPaciente.correo.trim().toLowerCase()
-  novoPaciente.correo = valor
+  const valor = novoPaciente.mailpac.trim().toLowerCase()
+  novoPaciente.mailpac = valor
   
   const esValido = correoInvalido.value = valor !== "" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valor)
 
   correoInvalido.value = esValido
   
   if (esValido) {
-    novoPaciente.correo = ""
+    novoPaciente.mailpac = ""
   } else {
-    novoPaciente.correo = valor
+    novoPaciente.mailpac = valor
   }
 }
 
 function validarTelefono() {
-  const valor = novoPaciente.telefono.trim()
+  const valor = novoPaciente.movilpacno.trim()
   telefonoIncorrecto.value = valor !== "" && !/^[67]\d{8}$/.test(valor)
   
   if (telefonoIncorrecto.value) {
-    novoPaciente.telefono = ""
+    novoPaciente.movilpacno = ""
   } else {
-    novoPaciente.telefono = valor
+    novoPaciente.movilpacno = valor
   }
 }
 
