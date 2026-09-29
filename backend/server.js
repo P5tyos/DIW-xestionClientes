@@ -3,7 +3,7 @@ import fs from 'fs'
 import cors from 'cors'
 import "dotenv/config";
 import mongoose from "mongoose"
-import pacientesRutas from './rutas/pacientes.rutas';
+import pacientesRutas from './rutas/pacientes.rutas.js';
 
 //creamos la aplicación de express
 const app = express()

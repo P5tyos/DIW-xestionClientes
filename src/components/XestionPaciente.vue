@@ -1,7 +1,7 @@
 <template>
   <div class="xestion-pacientes">
     <h4>👥 Xestión de pacientes</h4>
-    <form @submit.prevent="gardarPaciente">
+    <form @submit.prevent="guardarPaciente">
       <div class="fila">
         <div class="campo campo-dni">
           <label>DNI/CIF:</label>
@@ -16,8 +16,8 @@
         </div>
         <div class="campo campo-nome">
           <label>Nome:</label>
-          <input v-model="novoPaciente.nompac" type="text" required 
-          @blur="novoPaciente.nompac = formatearNome(novoPaciente.nompac)"/>
+          <input v-model="novoPaciente.nomepac" type="text" required 
+          @blur="novoPaciente.nomepac = formatearNome(novoPaciente.nomepac)"/>
         </div>
         <div class="campo campo-apellido">
           <label>Apelido:</label>
@@ -33,7 +33,7 @@
         <div class="campo campo-correo">
           <label>Correo:</label>
           <input 
-            v-model="novoPaciente.correo" 
+            v-model="novoPaciente.mailpac" 
             type="email" 
             required 
             style="text-align: center;"
@@ -45,7 +45,7 @@
         <div class="campo campo-telefono">
           <label>Telefono:</label>
           <input 
-            v-model="novoPaciente.movilpacno" 
+            v-model="novoPaciente.movilpac" 
             type="text" 
             required
             maxlength="9"
@@ -66,7 +66,7 @@
           <select id="provincia" v-model="novoPaciente.propac" @change="cargarMunicipios"> //@change para cargar los municipios cuando se selecciona una provincia
             <option value="">Selecciona una provincia</option>
             <option v-for="provincia in provincias" :key="provincia.id" :value="provincia.id">
-              {{ propac.nm }}
+              {{ provincia.nm }}
             </option>
           </select>
         </div>
@@ -75,7 +75,7 @@
           <select id="municipio" v-model="novoPaciente.munipac">
             <option value="">Selecciona un municipio</option>
             <option v-for="municipio in municipios" :key="municipio.id" :value="municipio.id">
-              {{ munipac.nm }}
+              {{ municipio.nm }}
             </option>
           </select>
         </div>
@@ -84,7 +84,7 @@
         <button
           type="submit"
           class="btn-guardar"
-          :disabled="novoPaciente.dnipac === '' || novoPaciente.nompac === ''"
+          :disabled="novoPaciente.dnipac === '' || novoPaciente.nomepac === ''"
         >
           Gardar
         </button>
@@ -111,10 +111,10 @@
         <tr v-for="(p, index) in pacientes" :key="index">
           <td>{{ index + 1 }}</td>
           <td style="text-align: center">{{ p.dnipac }}</td>
-          <td>{{ p.nompac }}</td>
+          <td>{{ p.nomepac }}</td>
           <td>{{ p.apelpac }}</td>
           <td>{{ p.nacipac }}</td>
-          <td>{{ p.movilpacno }}</td>
+          <td>{{ p.movilpac }}</td>
           <td>{{ p.mailpac }}</td>
           <td style="text-align: center">{{ p.dirpac }}</td>
           <td style="text-align: center">{{ p.propac }}</td>
@@ -259,13 +259,13 @@ function validarCorreo() {
 }
 
 function validarTelefono() {
-  const valor = novoPaciente.movilpacno.trim()
+  const valor = novoPaciente.movilpac.trim()
   telefonoIncorrecto.value = valor !== "" && !/^[67]\d{8}$/.test(valor)
   
   if (telefonoIncorrecto.value) {
-    novoPaciente.movilpacno = ""
+    novoPaciente.movilpac = ""
   } else {
-    novoPaciente.movilpacno = valor
+    novoPaciente.movilpac = valor
   }
 }
 

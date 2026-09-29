@@ -15,7 +15,7 @@ router.post("/", async (req, res) => {
         console.log("Datos Recibidos: ",req.body);
         const paciente = new Paciente(req.body);
 
-        const nuevoPaciente = await Paciente.save();
+        const nuevoPaciente = await paciente.save();
 
         res.status(201).json(nuevoPaciente);
     } catch (error) {
@@ -26,4 +26,5 @@ router.post("/", async (req, res) => {
         });
     };
 });
+
 export default router;
