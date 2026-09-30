@@ -136,7 +136,8 @@
 
 import { ref, reactive, onMounted } from "vue";
 import { obtenerMunicipios, obtenerProvincias } from "../api/municipios.js";
-import { savePaciente } from "../api/pacientes.js";
+import { getPacientes, savePaciente } from "../api/pacientes.js";
+
 
 const pacientes = ref([]); //almacena la lista de pacientes e os seus cambios
 const provincias = ref([]); //almacena a lista de provincias e os seus cambios
@@ -165,8 +166,8 @@ const novoPaciente = reactive({
 
 onMounted(async() => {
   //sempre se cargan estos pacientes de exemplo ao iniciar o componente
-  //pacientes.value = await obtenerPacientes;   //carga los usuarios guardados
   provincias.value = await obtenerProvincias(); //carga a lista de provincias desde a API
+  pacientes.value = await getPacientes();   //carga los usuarios guardados
 });
 
 // function para cargar todos los munic
@@ -201,7 +202,8 @@ async function guardarPaciente() {
     		const pacienteGuardado = await savePaciente(novoPaciente);
     		pacientes.value.push(pacienteGuardado);
     		console.log("Paciente gardado correctamente");
-        // getPacientes(); // Actualiza la lista de pacientes después de guardar
+        pacientes.value = await getPacientes(); // Actualiza la lista de pacientes después de guardar
+
   } catch (error) {
     console.error("Error ao gardar paciente:", error);
   }
@@ -281,11 +283,7 @@ function formatearApellido(valor) {
     .map((palabra) => palabra.charAt(0).toUpperCase() + palabra.slice(1).toLowerCase())
     .join(" ")
 }
-// comprobar cooreo que tenga un formato correcto(nombreusuario@dominio.com), eliminar espacios e pasar a minúsculas 
-function formatearCorreo(valor) {
-  return valor.trim().toLowerCase() 
 
-}
 </script>
 
 <style scoped>
