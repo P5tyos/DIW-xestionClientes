@@ -65,7 +65,7 @@
           <label>Provincia:</label>
           <select id="provincia" v-model="novoPaciente.propac" @change="cargarMunicipios"> //@change para cargar los municipios cuando se selecciona una provincia
             <option value="">Selecciona una provincia</option>
-            <option v-for="provincia in provincias" :key="provincia.id" :value="provincia.id">
+            <option v-for="provincia in provincias" :key="provincia.id" :value="provincia.nm">
               {{ provincia.nm }}
             </option>
           </select>
@@ -74,7 +74,7 @@
           <label>Municipio:</label>
           <select id="municipio" v-model="novoPaciente.munipac">
             <option value="">Selecciona un municipio</option>
-            <option v-for="municipio in municipios" :key="municipio.id" :value="municipio.id">
+            <option v-for="municipio in municipios" :key="municipio.id" :value="municipio.nm">
               {{ municipio.nm }}
             </option>
           </select>
@@ -177,28 +177,19 @@ async function cargarMunicipios() {
     return;
   }
 
+  const provincia = provincias.value.find(
+    p => p.nm === novoPaciente.propac
+  );
 
 //obtener los municipios de la provincia seleccionada
-municipios.value = await obtenerMunicipios(novoPaciente.propac); 
+municipios.value = await obtenerMunicipios(provincia.id); 
 }
 
 /// Zona de métodos ou funcións
 
 async function guardarPaciente() {
   try {
-        //tomar el nombre del municipio seleccionado y asignarlo a novoPaciente.munipac
-        //y de la provincia seleccionado y asignarlo a novoPaciente.propac
-        const provincia = provincias.value.find(
-            p => p.id === novoPaciente.propac
-          );
-
-          const municipio = municipios.value.find(
-            m => m.id === novoPaciente.munipac
-          );
-
-        novoPaciente.propac = provincia.nm;
-        novoPaciente.munipac = municipio.nm;
-
+        
     		const pacienteGuardado = await savePaciente(novoPaciente);
     		pacientes.value.push(pacienteGuardado);
     		console.log("Paciente gardado correctamente");
