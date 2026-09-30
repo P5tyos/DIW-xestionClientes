@@ -22,7 +22,7 @@
         <div class="campo campo-apellido">
           <label>Apelido:</label>
           <input v-model="novoPaciente.apelpac" type="text" required 
-          @blur="novoPaciente.apelpac = formatearApellido(novoPaciente.apelpac)"/>
+          @blur="novoPaciente.apelpac = formatearNome(novoPaciente.apelpac)"/>
         </div>
       </div>
       <div class="fila">
@@ -63,7 +63,7 @@
         </div>
         <div class="campo campo-provincia">
           <label>Provincia:</label>
-          <select id="provincia" v-model="novoPaciente.propac" @change="cargarMunicipios"> //@change para cargar los municipios cuando se selecciona una provincia
+          <select id="provincia" v-model="novoPaciente.propac" @change="cargarMunicipios"> <!--@change para cargar los municipios cuando se selecciona una provincia-->
             <option value="">Selecciona una provincia</option>
             <option v-for="provincia in provincias" :key="provincia.id" :value="provincia.nm">
               {{ provincia.nm }}
@@ -108,7 +108,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="(p, index) in pacientes" :key="index">
+        <tr v-for="(p, index) in pacientes" :key="p._id">
           <td>{{ index + 1 }}</td>
           <td style="text-align: center">{{ p.dnipac }}</td>
           <td>{{ p.nomepac }}</td>
@@ -193,7 +193,7 @@ async function guardarPaciente() {
     		const pacienteGuardado = await savePaciente(novoPaciente);
     		pacientes.value.push(pacienteGuardado);
     		console.log("Paciente gardado correctamente");
-        pacientes.value = await getPacientes(); // Actualiza la lista de pacientes después de guardar
+        //pacientes.value = await getPacientes(); // Actualiza la lista de pacientes después de guardar
 
   } catch (error) {
     console.error("Error ao gardar paciente:", error);
@@ -238,13 +238,9 @@ function validarDocumento() {
 }
 function validarCorreo() {
   const valor = novoPaciente.mailpac.trim().toLowerCase()
-  novoPaciente.mailpac = valor
-  
-  const esValido = correoInvalido.value = valor !== "" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valor)
+  correoInvalido.value = valor !== "" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valor)
 
-  correoInvalido.value = esValido
-  
-  if (esValido) {
+  if (correoInvalido.value) {
     novoPaciente.mailpac = ""
   } else {
     novoPaciente.mailpac = valor
@@ -263,12 +259,6 @@ function validarTelefono() {
 }
 
 function formatearNome(valor) {
-  return valor
-    .split(" ")
-    .map((palabra) => palabra.charAt(0).toUpperCase() + palabra.slice(1).toLowerCase())
-    .join(" ")
-}
-function formatearApellido(valor) {
   return valor
     .split(" ")
     .map((palabra) => palabra.charAt(0).toUpperCase() + palabra.slice(1).toLowerCase())
@@ -353,12 +343,6 @@ form {
   border-radius: 0px;
 }
 
-.campo-telefono {
-  flex: 1;
-  /* ocupa menos espacio */
-  border-radius: 0px;
-}
-
 .campo-direccion {
   flex: 1;
   /* ocupa menos espacio */
@@ -369,7 +353,6 @@ form {
   min-width: 80px;
   /* ancho fijo para alinear */
   font-weight: 500;
-  font: bold;
 }
 .campo-municipio {
   flex: 1;

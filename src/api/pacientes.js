@@ -12,6 +12,6 @@ export async function savePaciente(paciente){
 export async function getPacientes() {
     const res = await axios.get(`${API_URL}/pacientes`);
     res.data.sort((a,b)=>
-        a.apelpac.localCompare(b.apelpac, "es", {sensitivity: "base"}));
+        a.apelpac.localeCompare(b.apelpac, "es", {sensitivity: "base"}));
     return res.data;
 }
