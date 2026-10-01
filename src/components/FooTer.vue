@@ -1,10 +1,15 @@
 <template>
   <footer class="footer-content footer">
-    <ul class="link-aviso">
-      <router-link to="/avisolegal" color="white" >Aviso Legal</router-link>
-      <span>  © {{ new Date().getFullYear() }} Sanidad Teis — Desenvolvido en Vue 3 por </span> 
-      <a href="https://github.com/P5tyos" target="_blank"> Gergely Horvath </a>
-    </ul>
+    <div class="link-aviso">
+      <router-link to="/avisolegal">Aviso Legal</router-link>
+      <span>  © {{ new Date().getFullYear() }} Sanidad Teis — Desenvolvido en Vue 3 por </span>
+      <a
+        href="https://github.com/P5tyos"
+        target="_blank"
+        rel="noopener"
+        aria-label="Gergely Horvath en GitHub (abre en una nueva pestaña)"
+      > Gergely Horvath </a>
+    </div>
   </footer>
 </template>
 
@@ -12,7 +17,7 @@
 
 <style scoped>
 .footer {
-  background: #569097;
+  background: #1b5c63; /* máis escuro para que o texto branco teña contraste suficiente */
   color: white;
   text-align: center;
   padding: 0.2rem 6rem;
@@ -26,12 +31,12 @@
   align-items: center;
   gap: 1.5rem;
   flex-wrap: wrap;
-  margin-top: 6px;
+  margin: 6px 0 1rem; /* mesmo espazo que tiña cando era <ul> */
   color: #f5f5f3;
 }
 
 .link-aviso a {
-  color: #c2a203;
+  color: #ffe66d;
   cursor: pointer;
 }
 
@@ -41,5 +46,11 @@
 
 .link-aviso a:hover {
   color: #ffffff;
+}
+
+/* foco visible ao navegar co teclado */
+.link-aviso a:focus-visible {
+  outline: 3px solid #ffe66d;
+  outline-offset: 2px;
 }
 </style>

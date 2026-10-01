@@ -15,3 +15,9 @@ export async function getPacientes() {
         a.apelpac.localeCompare(b.apelpac, "es", {sensitivity: "base"}));
     return res.data;
 }
+
+//eliminar paciente
+export async function deletePaciente(dni) {
+    const res = await axios.delete(`${API_URL}/pacientes/${dni}`);
+    return res.data;
+}

@@ -3,6 +3,22 @@ import Paciente from "../modelos/Paciente.js";
 
 const router = express.Router();
 
+//eliminar
+router.delete("/:dni", async (req, res) => {
+    try {
+        const paciente = await Paciente.findOneAndDelete({ dnipac: req.params.dni });
+        if (!paciente) {
+            return res.status(404).json({ mensaje: "Paciente no encontrado" });
+        }
+        res.json({ mensaje: "Paciente eliminado" });
+    } catch (error) {
+        console.error("ERROR AL ELIMINAR PACIENTE", error);
+        res.status(500).json({
+            mensaje: "Error al crear el paciente"
+        });
+    };
+});
+
 
 // Crear 
 router.post("/", async (req, res) => {

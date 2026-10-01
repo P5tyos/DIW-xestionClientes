@@ -24,7 +24,7 @@ const isOpen = ref(false) // actívase cuando fago click
   justify-content: space-between;
   align-items: center;
   padding: 0.1rem 6rem;
-  background: #569097;
+  background: #1b5c63; /* máis escuro para que o texto branco teña contraste suficiente */
   color: white;
 }
 
@@ -47,6 +47,12 @@ const isOpen = ref(false) // actívase cuando fago click
 
 .menu a.router-link-active {
   border-bottom: 0.2rem solid #ffe66d;
+}
+
+/* foco visible ao navegar co teclado */
+.menu a:focus-visible {
+  outline: 3px solid #ffe66d;
+  outline-offset: 2px;
 }
 
 /* NUEVO */

@@ -4,65 +4,85 @@
     <form @submit.prevent="guardarPaciente">
       <div class="fila">
         <div class="campo campo-dni">
-          <label>DNI/CIF:</label>
+          <label for="dni">DNI/CIF:<span class="obrigatorio" aria-hidden="true">*</span></label>
           <input
+            id="dni"
             v-model="novoPaciente.dnipac"
             type="text"
             required
+            autocomplete="off"
             style="text-align: center;"
             :class="{ 'campo-erro': documentoInvalido }"
+            :aria-invalid="documentoInvalido"
+            aria-describedby="dni-erro"
+            @focus="documentoInvalido = false"
             @blur="validarDocumento"/>
-          <span v-if="documentoInvalido" class="mensaxe-erro" >DNI/NIE non válido</span>
+          <!-- type="button" para que non envíe o formulario ao pulsalo -->
+          <button type="button" class="btn-buscar" title="Buscar" aria-label="Buscar paciente por DNI">
+            <img src="../assets/buscar.png" alt="" class="icono-boton" />
+          </button>
+          <span v-if="documentoInvalido" id="dni-erro" class="mensaxe-erro" role="alert">DNI/NIE non válido</span>
         </div>
         <div class="campo campo-nome">
-          <label>Nome:</label>
-          <input v-model="novoPaciente.nomepac" type="text" required 
+          <label for="nome">Nome:<span class="obrigatorio" aria-hidden="true">*</span></label>
+          <input id="nome" v-model="novoPaciente.nomepac" type="text" required autocomplete="given-name"
           @blur="novoPaciente.nomepac = formatearNome(novoPaciente.nomepac)"/>
         </div>
         <div class="campo campo-apellido">
-          <label>Apelido:</label>
-          <input v-model="novoPaciente.apelpac" type="text" required 
+          <label for="apelido">Apelido:<span class="obrigatorio" aria-hidden="true">*</span></label>
+          <input id="apelido" v-model="novoPaciente.apelpac" type="text" required autocomplete="family-name"
           @blur="novoPaciente.apelpac = formatearNome(novoPaciente.apelpac)"/>
         </div>
       </div>
       <div class="fila">
         <div class="campo campo-nacimiento">
-          <label>Fecha nacemento:</label>
-          <input v-model="novoPaciente.nacipac" type="date" />
+          <label for="nacemento">Fecha nacemento:</label>
+          <input id="nacemento" v-model="novoPaciente.nacipac" type="date" autocomplete="bday" />
         </div>
         <div class="campo campo-correo">
-          <label>Correo:</label>
-          <input 
-            v-model="novoPaciente.mailpac" 
-            type="email" 
-            required 
+          <label for="correo">Correo:<span class="obrigatorio" aria-hidden="true">*</span></label>
+          <input
+            id="correo"
+            v-model="novoPaciente.mailpac"
+            type="email"
+            required
+            autocomplete="email"
             style="text-align: center;"
             :class="{ 'campo-erro': correoInvalido }"
+            :aria-invalid="correoInvalido"
+            aria-describedby="correo-erro"
+            @focus="correoInvalido = false"
             @blur="validarCorreo"
           />
-          <span v-if="correoInvalido" class="mensaxe-erro">Correo non válido</span>
+          <span v-if="correoInvalido" id="correo-erro" class="mensaxe-erro" role="alert">Correo non válido</span>
         </div>
         <div class="campo campo-telefono">
-          <label>Telefono:</label>
-          <input 
-            v-model="novoPaciente.movilpac" 
-            type="text" 
+          <label for="telefono">Telefono:<span class="obrigatorio" aria-hidden="true">*</span></label>
+          <input
+            id="telefono"
+            v-model="novoPaciente.movilpac"
+            type="tel"
+            inputmode="numeric"
             required
             maxlength="9"
+            autocomplete="tel"
             style="text-align: center;"
             :class="{'campo-erro' : telefonoIncorrecto }"
+            :aria-invalid="telefonoIncorrecto"
+            aria-describedby="telefono-erro"
+            @focus="telefonoIncorrecto = false"
             @blur="validarTelefono"
           />
-          <span v-if="telefonoIncorrecto" class="mensaxe-erro">Telefono non válido</span>
+          <span v-if="telefonoIncorrecto" id="telefono-erro" class="mensaxe-erro" role="alert">Telefono non válido</span>
         </div>
       </div>
       <div class="fila">
         <div class="campo campo-direccion">
-          <label>Dirección:</label>
-          <input v-model="novoPaciente.dirpac" type="text" />
+          <label for="direccion">Dirección:</label>
+          <input id="direccion" v-model="novoPaciente.dirpac" type="text" autocomplete="street-address" />
         </div>
         <div class="campo campo-provincia">
-          <label>Provincia:</label>
+          <label for="provincia">Provincia:</label>
           <select id="provincia" v-model="novoPaciente.propac" @change="cargarMunicipios"> <!--@change para cargar los municipios cuando se selecciona una provincia-->
             <option value="">Selecciona una provincia</option>
             <option v-for="provincia in provincias" :key="provincia.id" :value="provincia.nm">
@@ -71,7 +91,7 @@
           </select>
         </div>
         <div class="campo campo-municipio">
-          <label>Municipio:</label>
+          <label for="municipio">Municipio:</label>
           <select id="municipio" v-model="novoPaciente.munipac">
             <option value="">Selecciona un municipio</option>
             <option v-for="municipio in municipios" :key="municipio.id" :value="municipio.nm">
@@ -80,7 +100,7 @@
           </select>
         </div>
       </div>
-      <div class="fila">
+      <div class="fila fila-gardar">
         <button
           type="submit"
           class="btn-guardar"
@@ -88,23 +108,25 @@
         >
           Gardar
         </button>
+        <p class="nota-obrigatorio"><span aria-hidden="true">*</span> campo obrigatorio</p>
       </div>
     </form>
     <h4>📋 Listaxe de pacientes</h4>
     <table v-if="pacientes.length > 0">
+      <caption>Listaxe de pacientes</caption>
       <thead>
         <tr>
-          <th>#</th>
-          <th>DNI/CIF</th>
-          <th>Nome</th>
-          <th>Apelido</th>
-          <th>Fecha nacemento</th>
-          <th>Telefono</th>
-          <th>Correo</th>
-          <th>Dirección</th>
-          <th>Provincia</th>
-          <th>Municipio</th>
-          <th>Accións</th>
+          <th scope="col">#</th>
+          <th scope="col">DNI/CIF</th>
+          <th scope="col">Nome</th>
+          <th scope="col">Apelido</th>
+          <th scope="col">Fecha nacemento</th>
+          <th scope="col">Telefono</th>
+          <th scope="col">Correo</th>
+          <th scope="col">Dirección</th>
+          <th scope="col">Provincia</th>
+          <th scope="col">Municipio</th>
+          <th scope="col">Accións</th>
         </tr>
       </thead>
       <tbody>
@@ -120,8 +142,8 @@
           <td style="text-align: center">{{ p.propac }}</td>
           <td style="text-align: center">{{ p.munipac }}</td>
           <td style="text-align: center">
-            <button @click="editarPaciente(index)" title="Editar">✏️</button>
-            <button @click="eliminarPaciente(index)" title="Eliminar">🗑️</button>
+            <button @click="editarPaciente(index)" title="Editar" :aria-label="`Editar a ${p.nomepac} ${p.apelpac}`">✏️</button>
+            <button @click="eliminarPaciente(index)" title="Eliminar" :aria-label="`Eliminar a ${p.nomepac} ${p.apelpac}`">🗑️</button>
           </td>
         </tr>
       </tbody>
@@ -136,7 +158,7 @@
 
 import { ref, reactive, onMounted } from "vue";
 import { obtenerMunicipios, obtenerProvincias } from "../api/municipios.js";
-import { getPacientes, savePaciente } from "../api/pacientes.js";
+import { getPacientes, savePaciente, deletePaciente } from "../api/pacientes.js";
 
 
 const pacientes = ref([]); //almacena la lista de pacientes e os seus cambios
@@ -200,9 +222,17 @@ async function guardarPaciente() {
   }
 }
 
-function eliminarPaciente(index) {
-  pacientes.value.splice(index, 1); //elimina o paciente da lista
+async function eliminarPaciente(index) {
+  try {
+    await deletePaciente(pacientes.value[index].dnipac); //elimina o paciente da base de datos
+    pacientes.value.splice(index, 1); //elimina o paciente da lista
+    console.log("Paciente eliminado correctamente");
+    getPacientes(); // Actualiza la lista de pacientes después de eliminar
+  } catch (error) {
+    console.error("Error ao eliminar paciente:", error);
+  }
 }
+
 
 function editarPaciente(index) {
   const paciente = pacientes.value[index]; //carga os datos do paciente elixido no formulario
@@ -227,7 +257,7 @@ function validarDocumento() {
   const valor = novoPaciente.dnipac.trim().toUpperCase()
   const esValido = validarDNI(valor) || validarNIE(valor)
 
-  documentoInvalido.value = !esValido
+  documentoInvalido.value = valor !== "" && !esValido
 
   if (esValido) {
     novoPaciente.dnipac = valor
@@ -355,23 +385,23 @@ form {
   font-weight: 500;
 }
 .campo-municipio {
-  flex: 1;
-  /* ocupa menos espacio */
+  flex: 0 0 auto;
+  /* só ocupa o que mide o selector, o resto queda para a dirección */
   border-radius: 0px;
-  padding: 0.5rem;
+  padding: 0.5rem 0;
 }
 .campo-provincia {
-  flex: 1;
-  /* ocupa menos espacio */
+  flex: 0 0 auto;
+  /* só ocupa o que mide o selector, o resto queda para a dirección */
   border-radius: 0px;
-  padding: 0.5rem;
+  padding: 0.5rem 0;
 }
 
 .campo input {
   flex: 1;
   /* ocupa todo el espacio restante */
   padding: 0.5rem;
-  border: 1px solid #ddd;
+  border: 1px solid #767676; /* contraste mínimo 3:1 para que se vexa o campo */
   border-radius: 6px;
   box-sizing: border-box;
 }
@@ -438,15 +468,58 @@ h4 {
 }
 
 input.campo-erro {
-  border-color: #f28b82 !important;
+  border-color: #b00020 !important;
   background-color: #ffe6e6;
 }
 
 .mensaxe-erro {
   display: block;
-  font-size: 10px;
-  color: red;
+  font-size: 0.8rem;
+  color: #b00020;
   padding-top: 0.5%;
+}
+
+/* asterisco de campo obrigatorio */
+.obrigatorio {
+  color: #b00020;
+  margin-left: 0.15rem;
+}
+
+/* botón da lupa: un pouco máis alto que os de editar/eliminar, sen chegar á altura do input */
+.btn-buscar {
+  display: flex;
+  align-items: center;
+  padding: 0.2rem 0.4rem;
+}
+
+/* icona da lupa: a imaxe é de 512px, reducímola ao tamaño dun emoji */
+.icono-boton {
+  width: 1em;
+  height: 1em;
+  display: block;
+}
+
+/* o botón segue centrado e a nota vai á dereita na mesma liña */
+.fila-gardar {
+  position: relative;
+}
+
+.nota-obrigatorio {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.7rem;
+}
+
+/* o caption só o len os lectores de pantalla (xa hai un título visible enriba) */
+caption {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }
 
 @media (max-width: 768px) {

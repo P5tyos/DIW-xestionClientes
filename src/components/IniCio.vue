@@ -15,12 +15,12 @@
       <div class="tarjeta">
         <h2>Gestión de Pacientes</h2>
         <p>Consulta, registra o modifica tus datos médicos.</p>
-        <router-link to="/pacientes">Acceder</router-link>
+        <router-link to="/xestion-pacientes">Acceder</router-link>
       </div>
       <div class="tarjeta">
         <h2>Sobre Nosotros</h2>
         <p>Conoce nuestro equipo y nuestra misión.</p>
-        <router-link to="/sobre-nosotros">Ver más</router-link>
+        <router-link to="/sobrenos">Ver más</router-link>
       </div>
       <div class="tarjeta">
         <h2>Aviso Legal</h2>
@@ -125,12 +125,21 @@
   border-radius: 6px;
   text-decoration: none;
   font-weight: 600;
-  transition: background 0.2s ease, transform 0.2s ease;
 }
 
 .tarjeta a:hover {
   background: var(--accent-dark);
-  transform: translateY(-2px);
+}
+
+/* a animación só para quen non desactivou o movemento no seu sistema */
+@media (prefers-reduced-motion: no-preference) {
+  .tarjeta a {
+    transition: background 0.2s ease, transform 0.2s ease;
+  }
+
+  .tarjeta a:hover {
+    transform: translateY(-2px);
+  }
 }
 
 .info-contacto {
