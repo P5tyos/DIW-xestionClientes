@@ -101,10 +101,24 @@
         </div>
       </div>
       <div class="fila fila-gardar">
+        <div class="campo-condicions">
+          <label>
+            <input v-model="novoPaciente.lopdpac" type="checkbox" />Acceptar as condicions
+            <a :href="$router.resolve({ name: 'PoliticaPrivacidad'}).href" target="_blank" rel="noopener noreferrer">
+              Politica de privacidade e confidencialidade.
+            </a>
+          </label>
+        </div>
+
         <button
           type="submit"
           class="btn-guardar"
-          :disabled="novoPaciente.dnipac === '' || novoPaciente.nomepac === ''"
+          :disabled="
+            novoPaciente.dnipac === '' || 
+              novoPaciente.nomepac === '' ||
+              novoPaciente.apelpac === '' ||
+              novoPaciente.movilpac === '' ||
+              !novoPaciente.lopdpac "
         >
           Gardar
         </button>
@@ -142,7 +156,7 @@
           <td style="text-align: center">{{ p.propac }}</td>
           <td style="text-align: center">{{ p.munipac }}</td>
           <td style="text-align: center">
-            <button @click="editarPaciente(index)" title="Editar" :aria-label="`Editar a ${p.nomepac} ${p.apelpac}`">✏️</button>
+            <button @click="editarUsuario(index)" title="Editar" :aria-label="`Editar a ${p.nomepac} ${p.apelpac}`">✏️</button>
             <button @click="eliminarPaciente(index)" title="Eliminar" :aria-label="`Eliminar a ${p.nomepac} ${p.apelpac}`">🗑️</button>
           </td>
         </tr>
@@ -158,7 +172,7 @@
 
 import { ref, reactive, onMounted } from "vue";
 import { obtenerMunicipios, obtenerProvincias } from "../api/municipios.js";
-import { getPacientes, savePaciente, deletePaciente } from "../api/pacientes.js";
+import { getPacientes, savePaciente, deletePaciente, modifyPaciente } from "../api/pacientes.js";
 
 
 const pacientes = ref([]); //almacena la lista de pacientes e os seus cambios
@@ -168,6 +182,7 @@ const municipios = ref([]);
 const documentoInvalido = ref(false)
 const correoInvalido = ref(false)
 const telefonoIncorrecto = ref(false)
+const editando = ref(false);
 
 const LETRAS_DNI = "TRWAGMYFPDXBNJZSQVHLCKE"
 
@@ -180,9 +195,9 @@ const novoPaciente = reactive({
   movilpac: "",
   dirpac: "",
   propac: "",
-  munipac: ""
+  munipac: "",
+  lopdpac: false
 });
-
 
 /// Zona de ciclo de vida
 
@@ -211,15 +226,27 @@ municipios.value = await obtenerMunicipios(provincia.id);
 
 async function guardarPaciente() {
   try {
-        
-    		const pacienteGuardado = await savePaciente(novoPaciente);
-    		pacientes.value.push(pacienteGuardado);
-    		console.log("Paciente gardado correctamente");
-        //pacientes.value = await getPacientes(); // Actualiza la lista de pacientes después de guardar
+        if (editando.value){
+          const pacienteModificado = await modifyPaciente(novoPaciente.dnipac, novoPaciente);
+          const index = pacientes.value.findIndex (
+            (p) => p.dnipac === novoPaciente.dnipac
+          );
 
+          if (index !== -1){
+            pacientes.value[index] =pacienteModificado;
+          }
+          console.log("Paciente modificado correctamente")
+        } else {
+          const pacienteGuardado = await savePaciente(novoPaciente);
+          pacientes.value.push(pacienteGuardado);
+          console.log("Paciente gardado correctamente");
+          //pacientes.value = await getPacientes(); // Actualiza la lista de pacientes después de guardar
+        }
+      editando.value = false;  //reiniciamos el estado de edicion
   } catch (error) {
     console.error("Error ao gardar paciente:", error);
   }
+  pacientes.value = await getPacientes();
 }
 
 async function eliminarPaciente(index) {
@@ -238,6 +265,17 @@ function editarPaciente(index) {
   const paciente = pacientes.value[index]; //carga os datos do paciente elixido no formulario
   Object.assign(novoPaciente, paciente); // carga os datos do paciente no formulario recorda v-model do formulario é novoPaciente
 }
+
+async function editarUsuario(index){
+  const paciente=pacientes.value[index];
+  Object.assign(novoPaciente, paciente);
+  //evitar que se carge el _id n el formulasrio de MongoDB
+  delete novoPaciente._id;
+  editando.value = true;
+  await cargarMunicipios();
+
+}
+
 
 // Zona de funcións auxiliares
 function validarDNI(valor) {
@@ -405,6 +443,9 @@ form {
   border-radius: 6px;
   box-sizing: border-box;
 }
+.campo-condicions {
+  flex: 1;
+}
 
 .btn-guardar {
   background-color: #007bff;
@@ -415,6 +456,16 @@ form {
   cursor: pointer;
   margin: 0 auto;
   display: block;
+}
+.btn-guardar:disabled {
+  background-color: #E0E0E0;
+  color: #999;
+  border-color: #ccc;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+.btn-guardar:disabled:hover {
+  background-color: #fcf9f9;
 }
 
 .btn-guardar:hover {

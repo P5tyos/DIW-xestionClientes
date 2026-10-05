@@ -46,4 +46,19 @@ router.get("/", async (req, res) => {
     };
 });
 
+//modificar
+router.put("/:dni", async (req, res) => {
+    try {
+        const paciente = await Paciente.findOneAndUpdate({ dnipac: req.params.dni }, req.body, { new: true });
+        if (!paciente) {
+            return res.status(404).json({ mensaje: "Paciente no encontrado" });
+        }
+        res.json(paciente);
+    } catch (error) {
+        console.error("ERROR AL MODIFICAR PACIENTE", error);
+        res.status(500).json({ mensaje: "Error al modificar el paciente", error: error.message });
+    };
+});
+
+
 export default router;
