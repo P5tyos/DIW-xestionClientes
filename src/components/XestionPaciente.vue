@@ -11,16 +11,15 @@
             type="text"
             required
             autocomplete="off"
-            style="text-align: center;"
+            class="centrado"
             :class="{ 'campo-erro': documentoInvalido }"
             :aria-invalid="documentoInvalido"
             aria-describedby="dni-erro"
             @focus="documentoInvalido = false"
             @blur="validarDocumento"/>
           <!-- type="button" para que non envíe o formulario ao pulsalo -->
-          <button type="button" class="btn-buscar" title="Buscar" aria-label="Buscar paciente por DNI">
-            <img src="../assets/buscar.png" alt="" class="icono-boton" />
-          </button>
+          <button type="button" @click="buscarPaciente" title="Buscar" aria-label="Buscar paciente por DNI">🔍</button>
+          <button type="button" @click="limpiarFormpac" title="Limpar formulario" aria-label="Limpar formulario">🧹</button>
           <span v-if="documentoInvalido" id="dni-erro" class="mensaxe-erro" role="alert">DNI/NIE non válido</span>
         </div>
         <div class="campo campo-nome">
@@ -40,14 +39,13 @@
           <input id="nacemento" v-model="novoPaciente.nacipac" type="date" autocomplete="bday" />
         </div>
         <div class="campo campo-correo">
-          <label for="correo">Correo:<span class="obrigatorio" aria-hidden="true">*</span></label>
+          <label for="correo">Correo:</label>
           <input
             id="correo"
             v-model="novoPaciente.mailpac"
             type="email"
-            required
             autocomplete="email"
-            style="text-align: center;"
+            class="centrado"
             :class="{ 'campo-erro': correoInvalido }"
             :aria-invalid="correoInvalido"
             aria-describedby="correo-erro"
@@ -56,7 +54,7 @@
           />
           <span v-if="correoInvalido" id="correo-erro" class="mensaxe-erro" role="alert">Correo non válido</span>
         </div>
-        <div class="campo campo-telefono">
+        <div class="campo">
           <label for="telefono">Telefono:<span class="obrigatorio" aria-hidden="true">*</span></label>
           <input
             id="telefono"
@@ -66,8 +64,8 @@
             required
             maxlength="9"
             autocomplete="tel"
-            style="text-align: center;"
-            :class="{'campo-erro' : telefonoIncorrecto }"
+            class="centrado"
+            :class="{ 'campo-erro': telefonoIncorrecto }"
             :aria-invalid="telefonoIncorrecto"
             aria-describedby="telefono-erro"
             @focus="telefonoIncorrecto = false"
@@ -77,7 +75,7 @@
         </div>
       </div>
       <div class="fila">
-        <div class="campo campo-direccion">
+        <div class="campo">
           <label for="direccion">Dirección:</label>
           <input id="direccion" v-model="novoPaciente.dirpac" type="text" autocomplete="street-address" />
         </div>
@@ -101,14 +99,12 @@
         </div>
       </div>
       <div class="fila fila-gardar">
-        <div class="campo-condicions">
-          <label>
-            <input v-model="novoPaciente.lopdpac" type="checkbox" />Acceptar as condicions
-            <a :href="$router.resolve({ name: 'PoliticaPrivacidad'}).href" target="_blank" rel="noopener noreferrer">
-              Politica de privacidade e confidencialidade.
-            </a>
-          </label>
-        </div>
+        <label>
+          <input v-model="novoPaciente.lopdpac" type="checkbox" />Acceptar a 
+          <a :href="$router.resolve({ name: 'PoliticaPrivacidad'}).href" target="_blank" rel="noopener noreferrer">
+            Politica de privacidade e confidencialidade.
+          </a>
+        </label>
 
         <button
           type="submit"
@@ -146,16 +142,16 @@
       <tbody>
         <tr v-for="(p, index) in pacientes" :key="p._id">
           <td>{{ index + 1 }}</td>
-          <td style="text-align: center">{{ p.dnipac }}</td>
+          <td class="centrado">{{ p.dnipac }}</td>
           <td>{{ p.nomepac }}</td>
           <td>{{ p.apelpac }}</td>
           <td>{{ p.nacipac }}</td>
           <td>{{ p.movilpac }}</td>
           <td>{{ p.mailpac }}</td>
-          <td style="text-align: center">{{ p.dirpac }}</td>
-          <td style="text-align: center">{{ p.propac }}</td>
-          <td style="text-align: center">{{ p.munipac }}</td>
-          <td style="text-align: center">
+          <td class="centrado">{{ p.dirpac }}</td>
+          <td class="centrado">{{ p.propac }}</td>
+          <td class="centrado">{{ p.munipac }}</td>
+          <td class="centrado">
             <button @click="editarUsuario(index)" title="Editar" :aria-label="`Editar a ${p.nomepac} ${p.apelpac}`">✏️</button>
             <button @click="eliminarPaciente(index)" title="Eliminar" :aria-label="`Eliminar a ${p.nomepac} ${p.apelpac}`">🗑️</button>
           </td>
@@ -172,7 +168,13 @@
 
 import { ref, reactive, onMounted } from "vue";
 import { obtenerMunicipios, obtenerProvincias } from "../api/municipios.js";
-import { getPacientes, savePaciente, deletePaciente, modifyPaciente } from "../api/pacientes.js";
+import { 
+  getPacientes, 
+  savePaciente, 
+  deletePaciente, 
+  modifyPaciente, 
+  getPacienteByDni 
+} from "../api/pacientes.js";
 
 
 const pacientes = ref([]); //almacena la lista de pacientes e os seus cambios
@@ -260,7 +262,6 @@ async function eliminarPaciente(index) {
   }
 }
 
-
 function editarPaciente(index) {
   const paciente = pacientes.value[index]; //carga os datos do paciente elixido no formulario
   Object.assign(novoPaciente, paciente); // carga os datos do paciente no formulario recorda v-model do formulario é novoPaciente
@@ -332,183 +333,54 @@ function formatearNome(valor) {
     .map((palabra) => palabra.charAt(0).toUpperCase() + palabra.slice(1).toLowerCase())
     .join(" ")
 }
+const limpiarFormpac = () => {
+  Object.keys(novoPaciente).forEach((key) => {
+    if (typeof novoPaciente[key] === "boolean"){
+      novoPaciente[key] = false;   //reinicia los booleanos a false
+    } else {
+      novoPaciente[key] = ""; //reinicia el resto
+    }
+  })
+  editando.value = false;
+  documentoInvalido.value = false;    // not sure of the value taht should be in dni, correo, movil
+  correoInvalido.value = false ; 
+  telefonoIncorrecto.value = false ;
+};
+
+async function buscarPaciente() {
+  try {
+    const dni = novoPaciente.dnipac.trim();
+    if (!dni) {
+      console.log ("introduce un dni!");
+      return ;
+    }
+    const paciente= await getPacienteByDni(dni);
+    Object.assign(novoPaciente, paciente);
+    //evitar que se carge el _id de MongoDB no formulario
+    delete novoPaciente._id;
+    editando.value = true;
+    await cargarMunicipios();
+
+    console.log("Paciente encontrad", paciente);
+  } catch(error){
+      if (error.response?.status === 404 ){
+        console.log("Paciente no encontrad");
+      } else {
+        console.log("Error al buscar paciente:",error)
+      }
+  }
+  
+}
 
 </script>
 
 <style scoped>
 .xestion-pacientes {
   width: 100%;
-  /* opcional para que no crezca demasiado en pantallas muy grandes */
   background: white;
   padding: 2rem;
-  overflow: visible;
-  border-radius: 2px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   box-sizing: border-box;
-}
-
-form {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  margin-bottom: 2rem;
-}
-
-.fila {
-  display: flex;
-  gap: 1rem;
-  width: 100%;
-}
-
-.fila-centrada {
-  justify-content: center;
-}
-
-.campo {
-  display: flex;
-  align-items: center;
-  /* label e input en la misma línea */
-  gap: 0.5rem;
-  border-radius: 0px;
-}
-
-.campo-dni {
-  flex: 3;
-  /* ocupa menos espacio */
-  border-radius: 0px;
-}
-.campo-nacimiento {
-  flex: 1;
-  /* ocupa menos espacio */
-  border-radius: 0px;
-}
-
-.campo-nacimiento label {
-  white-space: nowrap;
-}
-
-.campo-telefono {
-  flex: 1;
-  /* ocupa menos espacio */
-  border-radius: 0px;
-}
-
-.campo-nome {
-  flex: 3;
-  /* ocupa más espacio */
-  border-radius: 0px;
-}
-.campo-apellido {
-  flex: 3;
-  /* ocupa más espacio */
-  border-radius: 0px;
-}
-
-.campo-correo {
-  flex: 2;
-  /* ocupa más espacio */
-  border-radius: 0px;
-}
-
-.campo-direccion {
-  flex: 1;
-  /* ocupa menos espacio */
-  border-radius: 0px;
-}
-
-.campo label {
-  min-width: 80px;
-  /* ancho fijo para alinear */
-  font-weight: 500;
-}
-.campo-municipio {
-  flex: 0 0 auto;
-  /* só ocupa o que mide o selector, o resto queda para a dirección */
-  border-radius: 0px;
-  padding: 0.5rem 0;
-}
-.campo-provincia {
-  flex: 0 0 auto;
-  /* só ocupa o que mide o selector, o resto queda para a dirección */
-  border-radius: 0px;
-  padding: 0.5rem 0;
-}
-
-.campo input {
-  flex: 1;
-  /* ocupa todo el espacio restante */
-  padding: 0.5rem;
-  border: 1px solid #767676; /* contraste mínimo 3:1 para que se vexa o campo */
-  border-radius: 6px;
-  box-sizing: border-box;
-}
-.campo-condicions {
-  flex: 1;
-}
-
-.btn-guardar {
-  background-color: #007bff;
-  color: white;
-  border: none;
-  padding: 0.4rem 1.5rem;
-  border-radius: 0px;
-  cursor: pointer;
-  margin: 0 auto;
-  display: block;
-}
-.btn-guardar:disabled {
-  background-color: #E0E0E0;
-  color: #999;
-  border-color: #ccc;
-  cursor: not-allowed;
-  opacity: 0.7;
-}
-.btn-guardar:disabled:hover {
-  background-color: #fcf9f9;
-}
-
-.btn-guardar:hover {
-  background-color: #0056b3;
-  border-radius: 0px;
-}
-
-.button {
-  background: none;
-  border: 2px solid #ddd;
-  cursor: pointer;
-  font-size: 1rem;
-}
-
-.inline-control {
-  display: flex;
-  align-items: center;
-  gap: 0.7rem;
-  padding-right: 5rem;
-}
-
-table {
-  width: 100%;
-  border-collapse: separate;
-  margin-top: 1rem;
-  font-size: 0.8rem;
-  border: 1px solid #ddd;
-}
-
-th,
-td {
-  border: 1px solid #ddd;
-  padding: 0.7rem;
-  text-align: left;
-}
-
-td:last-child {
-  white-space: nowrap;
-}
-
-th {
-  text-align: center;
-  background-color: #f8f9fa;
 }
 
 h4 {
@@ -518,16 +390,75 @@ h4 {
   color: white;
 }
 
+/* ---------- formulario ---------- */
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.fila {
+  display: flex;
+  gap: 1rem;
+}
+
+/* label e input na mesma liña; por defecto cada campo ocupa 1 parte da fila */
+.campo {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* campos máis anchos */
+.campo-dni,
+.campo-nome,
+.campo-apellido {
+  flex: 3;
+}
+
+.campo-correo {
+  flex: 2;
+}
+
+/* os selectores só ocupan o que miden, o resto queda para a dirección */
+.campo-provincia,
+.campo-municipio {
+  flex: 0 0 auto;
+  padding: 0.5rem 0;
+}
+
+.campo label {
+  min-width: 80px; /* ancho fixo para aliñar */
+  font-weight: 500;
+}
+
+.campo-nacimiento label {
+  white-space: nowrap;
+}
+
+.campo input {
+  flex: 1;
+  padding: 0.5rem;
+  border: 1px solid #767676; /* contraste mínimo 3:1 para que se vexa o campo */
+  border-radius: 6px;
+  box-sizing: border-box;
+}
+
+.centrado {
+  text-align: center;
+}
+
+/* ---------- validación ---------- */
 input.campo-erro {
-  border-color: #b00020 !important;
+  border-color: #b00020;
   background-color: #ffe6e6;
 }
 
 .mensaxe-erro {
-  display: block;
   font-size: 0.8rem;
   color: #b00020;
-  padding-top: 0.5%;
 }
 
 /* asterisco de campo obrigatorio */
@@ -536,31 +467,61 @@ input.campo-erro {
   margin-left: 0.15rem;
 }
 
-/* botón da lupa: un pouco máis alto que os de editar/eliminar, sen chegar á altura do input */
-.btn-buscar {
-  display: flex;
-  align-items: center;
-  padding: 0.2rem 0.4rem;
-}
-
-/* icona da lupa: a imaxe é de 512px, reducímola ao tamaño dun emoji */
-.icono-boton {
-  width: 1em;
-  height: 1em;
-  display: block;
-}
-
-/* o botón segue centrado e a nota vai á dereita na mesma liña */
+/* ---------- fila de gardar: checkbox enriba do botón, centrados; nota á dereita ---------- */
 .fila-gardar {
   position: relative;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-guardar {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 0.4rem 1.5rem;
+  cursor: pointer;
+}
+
+.btn-guardar:hover:enabled {
+  background-color: #0056b3;
+}
+
+.btn-guardar:disabled {
+  background-color: #e0e0e0;
+  color: #999;
+  cursor: not-allowed;
+  opacity: 0.7;
 }
 
 .nota-obrigatorio {
   position: absolute;
   right: 0;
-  top: 50%;
-  transform: translateY(-50%);
+  bottom: 0;
+  margin: 0;
   font-size: 0.7rem;
+}
+
+/* ---------- táboa ---------- */
+table {
+  width: 100%;
+  margin-top: 1rem;
+  font-size: 0.8rem;
+  border: 1px solid #ddd;
+}
+
+th,
+td {
+  border: 1px solid #ddd;
+  padding: 0.7rem;
+}
+
+th {
+  background-color: #f8f9fa;
+}
+
+td:last-child {
+  white-space: nowrap;
 }
 
 /* o caption só o len os lectores de pantalla (xa hai un título visible enriba) */
@@ -576,14 +537,12 @@ caption {
 @media (max-width: 768px) {
   .xestion-pacientes {
     padding: 1rem;
-    /* reducir el padding en pantallas pequeñas */
   }
 
+  /* apila os campos verticalmente en móbiles */
   .fila {
     flex-direction: column;
-    /* apila los campos verticalmente en móviles */
     gap: 0.5rem;
-    /* opcional: un pequeño espacio entre ellos */
   }
 }
 </style>

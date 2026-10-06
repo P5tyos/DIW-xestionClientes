@@ -23,10 +23,19 @@ router.delete("/:dni", async (req, res) => {
 // Crear 
 router.post("/", async (req, res) => {
     try {
+        const pacienteExistente = await Paciente.findOne( 
+            {dnipac: req.body.dnipac,})
+        if (pacienteExistente){
+            return res.status(409).json({
+                mensaje: "Ya existe un paciente con este DNI",
+            })
+        }
+        
         console.log("Datos Recibidos: ",req.body);
         const paciente = new Paciente(req.body);
         const nuevoPaciente = await paciente.save();
         res.status(201).json(nuevoPaciente);
+        
     } catch (error) {
         console.error("ERROR AL CREAR PACIENTE",error);
         res.status(500).json({
@@ -60,5 +69,23 @@ router.put("/:dni", async (req, res) => {
     };
 });
 
+
+//Obtener un paciente por dni
+router.get("/:dni", async (req, res) => {
+    try {
+        const paciente = await Paciente.findOne({
+            dnipac: req.params.dni,
+        });  //es el select sql
+        if (!paciente) {
+            return res.status(404).json({
+               mensaje: "Paciente no encontrado" ,
+            });
+        }
+        res.json(paciente);
+    } catch (error) {
+        res.status(500).json({ 
+            mensaje: "Error al obtener los pacientes", error });
+    };
+});
 
 export default router;

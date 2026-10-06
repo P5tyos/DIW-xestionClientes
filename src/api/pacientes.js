@@ -27,3 +27,9 @@ export async function modifyPaciente(dni, paciente) {
     const res = await axios.put(`${API_URL}/pacientes/${dni}`, paciente);
     return res.data;
 }
+
+//Obtener un paciente por DNI
+export async function getPacienteByDni(dni) {
+    const res = await axios.get(`${API_URL}/pacientes/${dni}`);
+    return res.data;
+}

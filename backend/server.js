@@ -4,12 +4,15 @@ import cors from 'cors'
 import "dotenv/config";
 import mongoose from "mongoose"
 import pacientesRutas from './rutas/pacientes.rutas.js';
+import doctoresRutas from './rutas/doctores.rutas.js'
 
 //creamos la aplicación de express
 const app = express()
 app.use(cors());
 app.use(express.json());
 app.use('/api/pacientes', pacientesRutas);
+app.use('/api/doctores', doctoresRutas);
+
 
 //usa el port devinido en las variables del entorno y si no coge el 3000
 const PORT = process.env.PORT || 3000;
@@ -23,18 +26,30 @@ const MONGO_URI = process.env.MONGO_URI;
 //ruta de la api para obtener provincias y municipios
 app.get('/api/municipios', (req, res) => {
     console.log('Petición recibida')
+    //leemos el fichero Json
+        const datos = fs.readFileSync(
+            './backend/data/municipios.json', 
+            'utf-8'
+        )
+    //convertimos el texto JSON en un objecto JavaScript
+    const datosJson = JSON.parse(datos)
+    //enviamos los datos comorespuesta al cliente
+    res.json(datosJson)
+})
 
-//leemos el fichero Json
-    const datos = fs.readFileSync(
-        './backend/data/municipios.json', 
-        'utf-8'
-    )
 
-//convertimos el texto JSON en un objecto JavaScript
-const datosJson = JSON.parse(datos)
-
-//enviamos los datos comorespuesta al cliente
-res.json(datosJson)
+//ruta de la api para obtener ESPECIALIDADES
+app.get('/api/especialidades', (req, res) => {
+    console.log('Petición recibida')
+    //leemos el fichero Json
+        const datos = fs.readFileSync(
+            './backend/data/especialidades.json', 
+            'utf-8'
+        )
+    //convertimos el texto JSON en un objecto JavaScript
+    const datosJson = JSON.parse(datos)
+    //enviamos los datos comorespuesta al cliente web
+    res.json(datosJson)
 })
 
 
