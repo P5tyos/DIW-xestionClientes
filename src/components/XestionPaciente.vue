@@ -1,6 +1,6 @@
 <template>
   <div class="xestion-pacientes">
-    <h4>👥 Xestión de pacientes</h4>
+    <h3>👥  Xestión de pacientes</h3>
     <form @submit.prevent="guardarPaciente">
       <div class="fila">
         <div class="campo campo-dni">
@@ -121,7 +121,7 @@
         <p class="nota-obrigatorio"><span aria-hidden="true">*</span> campo obrigatorio</p>
       </div>
     </form>
-    <h4>📋 Listaxe de pacientes</h4>
+    <h3>📋 Listaxe de pacientes</h3>
     <table v-if="pacientes.length > 0">
       <caption>Listaxe de pacientes</caption>
       <thead>
@@ -203,13 +203,14 @@ const novoPaciente = reactive({
 
 /// Zona de ciclo de vida
 
+// ao abrir a páxina: carga as provincias e a lista de pacientes
 onMounted(async() => {
   //sempre se cargan estos pacientes de exemplo ao iniciar o componente
   provincias.value = await obtenerProvincias(); //carga a lista de provincias desde a API
   pacientes.value = await getPacientes();   //carga los usuarios guardados
 });
 
-// function para cargar todos los munic
+// carga os municipios da provincia elixida no selector (ou baleira a lista se non hai provincia)
 async function cargarMunicipios() {
   if (novoPaciente.propac === "") {
     municipios.value=[];
@@ -226,6 +227,7 @@ municipios.value = await obtenerMunicipios(provincia.id);
 
 /// Zona de métodos ou funcións
 
+// botón Gardar: modifica o paciente se estamos editando, se non créao novo
 async function guardarPaciente() {
   try {
         if (editando.value){
@@ -242,7 +244,6 @@ async function guardarPaciente() {
           const pacienteGuardado = await savePaciente(novoPaciente);
           pacientes.value.push(pacienteGuardado);
           console.log("Paciente gardado correctamente");
-          //pacientes.value = await getPacientes(); // Actualiza la lista de pacientes después de guardar
         }
       editando.value = false;  //reiniciamos el estado de edicion
   } catch (error) {
@@ -251,6 +252,7 @@ async function guardarPaciente() {
   pacientes.value = await getPacientes();
 }
 
+// botón 🗑️: borra o paciente da BD e da táboa
 async function eliminarPaciente(index) {
   try {
     await deletePaciente(pacientes.value[index].dnipac); //elimina o paciente da base de datos
@@ -262,11 +264,7 @@ async function eliminarPaciente(index) {
   }
 }
 
-function editarPaciente(index) {
-  const paciente = pacientes.value[index]; //carga os datos do paciente elixido no formulario
-  Object.assign(novoPaciente, paciente); // carga os datos do paciente no formulario recorda v-model do formulario é novoPaciente
-}
-
+// botón ✏️: carga o paciente da táboa no formulario e activa o modo edición
 async function editarUsuario(index){
   const paciente=pacientes.value[index];
   Object.assign(novoPaciente, paciente);
@@ -277,14 +275,16 @@ async function editarUsuario(index){
 
 }
 
-
 // Zona de funcións auxiliares
+
+// comproba que un DNI (8 números + letra) ten a letra correcta
 function validarDNI(valor) {
   if (!/^\d{8}[A-Z]$/.test(valor)) return false
   const numero = parseInt(valor.slice(0, 8), 10)
   return valor.charAt(8) === LETRAS_DNI[numero % 23]
 }
 
+// comproba que un NIE (X/Y/Z + 7 números + letra) ten a letra correcta
 function validarNIE(valor) {
   if (!/^[XYZ]\d{7}[A-Z]$/.test(valor)) return false
   const prefixo = { X: "0", Y: "1", Z: "2" }[valor.charAt(0)]
@@ -292,6 +292,7 @@ function validarNIE(valor) {
   return valor.charAt(8) === LETRAS_DNI[numero % 23]
 }
 
+// ao saír do campo DNI: valida DNI/NIE, mostra o erro e baleira o campo se non vale
 function validarDocumento() {
   const valor = novoPaciente.dnipac.trim().toUpperCase()
   const esValido = validarDNI(valor) || validarNIE(valor)
@@ -305,6 +306,8 @@ function validarDocumento() {
   }
   
 }
+
+// ao saír do campo Correo: valida o formato e baleira o campo se non vale
 function validarCorreo() {
   const valor = novoPaciente.mailpac.trim().toLowerCase()
   correoInvalido.value = valor !== "" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valor)
@@ -316,6 +319,7 @@ function validarCorreo() {
   }
 }
 
+// ao saír do campo Teléfono: valida que sexa un móbil de 9 cifras (6 ou 7 ao principio)
 function validarTelefono() {
   const valor = novoPaciente.movilpac.trim()
   telefonoIncorrecto.value = valor !== "" && !/^[67]\d{8}$/.test(valor)
@@ -327,12 +331,15 @@ function validarTelefono() {
   }
 }
 
+// pon en maiúscula a primeira letra de cada palabra (ex: "ana maría" → "Ana María")
 function formatearNome(valor) {
   return valor
     .split(" ")
     .map((palabra) => palabra.charAt(0).toUpperCase() + palabra.slice(1).toLowerCase())
     .join(" ")
 }
+
+// botón 🧹: baleira o formulario, sae do modo edición e quita as mensaxes de erro
 const limpiarFormpac = () => {
   Object.keys(novoPaciente).forEach((key) => {
     if (typeof novoPaciente[key] === "boolean"){
@@ -347,6 +354,7 @@ const limpiarFormpac = () => {
   telefonoIncorrecto.value = false ;
 };
 
+// botón 🔍: busca o paciente polo DNI na BD e cárgao no formulario para editalo
 async function buscarPaciente() {
   try {
     const dni = novoPaciente.dnipac.trim();
@@ -369,7 +377,6 @@ async function buscarPaciente() {
         console.log("Error al buscar paciente:",error)
       }
   }
-  
 }
 
 </script>
@@ -383,10 +390,10 @@ async function buscarPaciente() {
   box-sizing: border-box;
 }
 
-h4 {
+h3 {
   margin-bottom: 1rem;
   font-weight: 600;
-  background-color: #068311;
+  background-color: #46ce8a;
   color: white;
 }
 
@@ -444,6 +451,21 @@ form {
   border: 1px solid #767676; /* contraste mínimo 3:1 para que se vexa o campo */
   border-radius: 6px;
   box-sizing: border-box;
+}
+
+/* os select coa mesma altura que os input */
+.campo select {
+  padding: 0.5rem;
+}
+
+/* botóns de icona (🔍 🧹 ✏️ 🗑️): mesmo ancho, e o alto igual ao ancho (cadrados) */
+.campo button,
+td button {
+  aspect-ratio: 1;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .centrado {

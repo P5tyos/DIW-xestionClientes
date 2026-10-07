@@ -26,7 +26,7 @@ const MONGO_URI = process.env.MONGO_URI;
 //ruta de la api para obtener provincias y municipios
 app.get('/api/municipios', (req, res) => {
     console.log('Petición recibida')
-    //leemos el fichero Json
+        //leemos el fichero Json
         const datos = fs.readFileSync(
             './backend/data/municipios.json', 
             'utf-8'
@@ -36,7 +36,6 @@ app.get('/api/municipios', (req, res) => {
     //enviamos los datos comorespuesta al cliente
     res.json(datosJson)
 })
-
 
 //ruta de la api para obtener ESPECIALIDADES
 app.get('/api/especialidades', (req, res) => {
@@ -52,9 +51,7 @@ app.get('/api/especialidades', (req, res) => {
     res.json(datosJson)
 })
 
-
 //ponemos el servidor a escuchar en el puerto 3000
-
 async function iniciaServer() {
     try {
         //conncetamos con mongo db

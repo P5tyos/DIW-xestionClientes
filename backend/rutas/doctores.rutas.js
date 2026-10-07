@@ -69,21 +69,21 @@ router.put("/:iddoc", async (req, res) => {
 });
 
 
-//Obtener un doctor por id
-router.get("/:iddoc", async (req, res) => {
+//Obtener doctores por especialidad
+router.get("/:especialidad", async (req, res) => {
     try {
-        const doctor = await Doctor.findOne({
-            iddoc: req.params.dni,
+        const doctor = await Doctor.find({
+            especialidad: req.params.especialidad,
         });  //es el select sql
         if (!doctor) {
             return res.status(404).json({
-               mensaje: "Doctor no encontrado" ,
+               mensaje: "No doctor encontrado" ,
             });
         }
         res.json(doctor);
     } catch (error) {
         res.status(500).json({ 
-            mensaje: "Error al obtener los doctor", error });
+            mensaje: "Error al obtener doctores", error });
     };
 });
 
