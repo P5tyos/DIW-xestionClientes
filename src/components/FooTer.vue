@@ -17,7 +17,7 @@
 
 <style scoped>
 .footer {
-  background: #1b5c63; /* máis escuro para que o texto branco teña contraste suficiente */
+  background: var(--accent); /* verde da paleta: o texto branco ten contraste 5:1 */
   color: white;
   text-align: center;
   padding: 0.2rem 6rem;
@@ -32,16 +32,16 @@
   gap: 1.5rem;
   flex-wrap: wrap;
   margin: 6px 0 1rem; /* mesmo espazo que tiña cando era <ul> */
-  color: #f5f5f3;
+  color: white;
 }
 
 .link-aviso a {
-  color: #ffe66d;
+  color: var(--accent-soft); /* verde moi claro: contraste 4.5:1 sobre o footer */
   cursor: pointer;
 }
 
 .link-aviso a:visited {
-  color: #e7d08b;
+  color: var(--accent-soft);
 }
 
 .link-aviso a:hover {
@@ -50,7 +50,7 @@
 
 /* foco visible ao navegar co teclado */
 .link-aviso a:focus-visible {
-  outline: 3px solid #ffe66d;
+  outline: 3px solid var(--accent-light);
   outline-offset: 2px;
 }
 </style>

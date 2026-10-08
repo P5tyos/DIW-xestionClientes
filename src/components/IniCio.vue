@@ -95,7 +95,7 @@
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 12px;
-  box-shadow: 0 10px 25px rgba(23, 59, 74, 0.08);
+  box-shadow: 0 10px 25px rgba(29, 59, 44, 0.08);
 }
 
 .tarjeta {

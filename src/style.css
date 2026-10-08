@@ -1,15 +1,18 @@
 :root {
-  --text: #40515a;
-  --text-h: #173b4a;
-  --bg: #f2f8f7;
+  /* paleta: todos os verdes son do mesmo ton (150°), só cambia a luminosidade */
+  --text: #3a4a41;          /* texto normal: gris verdoso */
+  --text-h: #1d3b2c;        /* títulos e texto sobre verde claro (contraste 6:1 sobre --heading-bg) */
+  --bg: #effaf5;
   --surface: rgba(255, 255, 255, 0.94);
-  --surface-muted: #edf5f3;
-  --border: #d4e2e0;
-  --accent: #287f83;
-  --accent-dark: #1b5c63;
-  --accent-soft: #dff0ed;
+  --surface-muted: #e3f7ed;
+  --border: #c4eed9;
+  --accent: #217d4f;        /* navbar, footer, botóns: texto branco con contraste 5:1 (AA) */
+  --accent-dark: #1b6540;   /* hover dos botóns */
+  --accent-light: #c4eed9;  /* subliñado do menú e foco sobre fondo verde */
+  --accent-soft: #e3f7ed;   /* cabeceiras de táboa, enlaces do footer */
+  --heading-bg: #46ce8a;    /* fondo dos títulos h3 das páxinas de xestión */
   --danger: #b84d4d;
-  --shadow: 0 18px 45px rgba(23, 59, 74, 0.12);
+  --shadow: 0 18px 45px rgba(29, 59, 44, 0.12);
 
   --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
   --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
@@ -37,6 +40,23 @@ input:focus-visible,
 select:focus-visible {
   outline: 3px solid var(--accent-dark);
   outline-offset: 2px;
+}
+
+/* enlaces co verde da paleta en vez do azul/morado do navegador (contraste 5:1 sobre branco) */
+a,
+a:visited {
+  color: var(--accent);
+}
+
+/* aliñamento do texto en formularios e táboas (en toda a app):
+   texto → esquerda (por defecto), números e DNI → centrado, cálculos (facturas) → dereita */
+.centrado {
+  text-align: center;
+}
+
+.dereita {
+  text-align: right;
+  font-variant-numeric: tabular-nums; /* todas as cifras co mesmo ancho para que as columnas cadren */
 }
 
 body {

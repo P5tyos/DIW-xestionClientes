@@ -14,7 +14,7 @@ router.delete("/:dni", async (req, res) => {
     } catch (error) {
         console.error("ERROR AL ELIMINAR PACIENTE", error);
         res.status(500).json({
-            mensaje: "Error al crear el paciente"
+            mensaje: "Error al eliminar el paciente"
         });
     };
 });
@@ -58,6 +58,10 @@ router.get("/", async (req, res) => {
 //modificar
 router.put("/:dni", async (req, res) => {
     try {
+        // o DNI non se pode modificar: o paciente identifícase polo DNI da URL,
+        // así que borramos dnipac (e o _id de MongoDB) do body aínda que alguén os envíe
+        delete req.body.dnipac;
+        delete req.body._id;
         const paciente = await Paciente.findOneAndUpdate({ dnipac: req.params.dni }, req.body, { new: true });
         if (!paciente) {
             return res.status(404).json({ mensaje: "Paciente no encontrado" });
