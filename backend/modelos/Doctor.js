@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 //modelo Doctor
 const DoctorSchema = new mongoose.Schema({
-    iddoc: { type: String, required: true, unique: true },
+    //iddoc: { type: String, required: true, unique: true },  usamos _id de MongoDB como identificador unico
     nomedoc: { type: String, required: true },
     apeldoc: { type: String, required: true },
     coledoc: { type: Boolean, required: true },

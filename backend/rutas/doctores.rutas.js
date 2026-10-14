@@ -4,17 +4,17 @@ import Doctor from "../modelos/Doctor.js";
 const router = express.Router();
 
 //eliminar
-router.delete("/:iddoc", async (req, res) => {
+router.delete("/:id", async (req, res) => {
     try {
-        const doctor = await Doctor.findOneAndDelete({ iddoc: req.params.dni, });
+        const doctor = await Doctor.findByIdAndDelete(req.params.id); // busca polo _id de MongoDB (o :id da URL)
         if (!doctor) {
             return res.status(404).json({ mensaje: "Doctor no encontrado" });
         }
         res.json({ mensaje: "Doctor eliminado" });
     } catch (error) {
-        console.error("ERROR AL ELIMINAR PACIENTE", error);
+        console.error("ERROR AL ELIMINAR DOCTOR", error);
         res.status(500).json({
-            mensaje: "Error al crear el doctor"
+            mensaje: "Error al eliminar el doctor"
         });
     };
 });
@@ -23,21 +23,21 @@ router.delete("/:iddoc", async (req, res) => {
 // Crear 
 router.post("/", async (req, res) => {
     try {
-        const doctorExistente = await doctor.findeOne( 
-            {iddoc: req.body.iddoc,})
+        console.log("Datos Recibidos: ",req.body);
+        /* if using _id, no need to check duplicats
+        const doctorExistente = await Doctor.findOne({ iddoc: req.body.iddoc });
         if (doctorExistente){
             return res.status(409).json({
-                mensaje: "Ya existe un doctor con este DNI",
+                mensaje: "Ya existe un doctor con este ID",
             })
-        }
-        
+        }*/  
+
         const doctor = new Doctor(req.body);
         const nuevoDoctor = await doctor.save();
         res.status(201).json(nuevoDoctor);
-        console.log("Datos Recibidos: ",req.body);
-        
+
     } catch (error) {
-        console.error("ERROR AL CREAR PACIENTE",error);
+        console.error("ERROR AL CREAR DOCTOR",error);
         res.status(500).json({
             mensaje: "Error al crear el doctor"
         });
@@ -55,9 +55,13 @@ router.get("/", async (req, res) => {
 });
 
 //modificar
-router.put("/:iddoc", async (req, res) => {
+router.put("/:id", async (req, res) => {
     try {
-        const doctor = await Doctor.findOneAndUpdate({ iddoc: req.params.dni }, req.body, { new: true });
+        // o _id non se pode modificar: o doctor identifícase polo :id da URL,
+        // así que borramos o _id do body aínda que alguén o envíe
+        //delete req.body.iddoc; no need if we use _id
+        delete req.body._id;
+        const doctor = await Doctor.findByIdAndUpdate(req.params.id, req.body, { new: true });
         if (!doctor) {
             return res.status(404).json({ mensaje: "Doctor no encontrado" });
         }
@@ -73,7 +77,7 @@ router.put("/:iddoc", async (req, res) => {
 router.get("/:especialidad", async (req, res) => {
     try {
         const doctor = await Doctor.find({
-            especialidad: req.params.especialidad,
+            espedoc: req.params.especialidad, // o campo no modelo chámase espedoc
         });  //es el select sql
         if (!doctor) {
             return res.status(404).json({

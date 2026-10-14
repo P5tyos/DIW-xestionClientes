@@ -6,8 +6,8 @@
       <div class="fila">
         <div class="campo campo-id">
           <label for="id">ID:</label>
-          <!-- o ID non se edita: só se mostra cando cargamos un doctor -->
-          <input id="id" v-model="novoDoctor.iddoc" type="text" disabled class="centrado" />
+          <!-- o ID é o _id que xera MongoDB: baleiro nun doctor novo, vese ao cargar un (✏️) e non se pode editar -->
+          <input id="id" v-model="novoDoctor._id" type="text" disabled class="centrado" />
           <!-- type="button" para que non envíe o formulario ao pulsalo -->
           <button type="button" @click="limpiarFormdoc" title="Limpar formulario" aria-label="Limpar formulario">
             🧹
@@ -82,8 +82,8 @@
       </caption>
       <thead>
         <tr>
+          <th scope="col">#</th>
           <th scope="col">ID</th>
-          <th scope="col">Codigo</th>
           <th scope="col">Apelido</th>
           <th scope="col">Nome</th>
           <th scope="col">Colexiado</th>
@@ -93,10 +93,10 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="(d, index) in doctores" :key="index">
-          <!-- números (nº, ID, teléfono) centrados; o texto queda á esquerda -->
+        <tr v-for="(d, index) in doctores" :key="d._id">
+          <!-- números e códigos (nº, ID, teléfono) centrados; o texto queda á esquerda -->
           <td class="centrado">{{ index + 1 }}</td>
-          <td class="centrado">{{ d.iddoc }}</td>
+          <td class="centrado">{{ d._id }}</td>
           <td>{{ d.apeldoc }}</td>
           <td>{{ d.nomedoc }}</td>
           <td>{{ d.coledoc ? "Si" : "Non" }}</td>
@@ -136,8 +136,8 @@ const editando = ref(false);
 const correoInvalido = ref(false);
 const telefonoIncorrecto = ref(false);
 
+// sen ID propio: ao editar, Object.assign engade o _id do doctor e con el sabemos cal modificar
 const novoDoctor = reactive({
-  iddoc: "",
   apeldoc: "",
   nomedoc: "",
   maildoc: "",
@@ -146,12 +146,62 @@ const novoDoctor = reactive({
   espedoc: "",
 });
 
+//=============== FUNCIONES PRINCIPALES de BBDD ==================
 onMounted(async () => {
   doctores.value = await getDoctores();
   especialidades.value = await obtenerEspecialidades();
 });
 
-//=============== FUNCIONES PRINCIPALES de BBDD ==================
+async function guardarDoctor() {
+  try {
+        if (editando.value){
+          // identificamos o doctor polo _id de MongoDB
+          const doctorModificado = await modifyDoctor(novoDoctor._id, novoDoctor);
+          const index = doctores.value.findIndex (
+            (d) => d._id === novoDoctor._id
+          );
+
+          if (index !== -1){
+            doctores.value[index] = doctorModificado;
+          }
+          console.log("Doctor modificado correctamente")
+        } else {
+          const doctorGuardado = await saveDoctor(novoDoctor);
+          doctores.value.push(doctorGuardado);
+          console.log("Doctor gardado correctamente");
+        }
+            limpiarFormdoc();  //baleira o formulario e sae do modo edición
+  } catch (error) {
+    console.error("Error ao gardar doctor:", error);
+  }
+  doctores.value = await getDoctores();
+}
+
+// botón ✏️: carga o doctor da táboa no formulario e activa o modo edición
+function editarDoctor(index) {
+  // copia tamén o _id: precisámolo para que Gardar saiba que doctor modificar
+  // (ao revés que en pacientes, que se identifican polo DNI e o _id bórrase)
+  Object.assign(novoDoctor, doctores.value[index]);
+  editando.value = true;
+}
+
+// botón 🗑️: borra un Doctor da BD e da táboa
+async function eliminarDoctor(index) {
+  // pide confirmación antes de borrar; se o usuario preme Cancelar non se fai nada
+  const d = doctores.value[index];
+  if (!confirm(`Seguro que queres eliminar a ${d.nomedoc} ${d.apeldoc}?`)) {
+    return;
+  }
+
+  try {
+    await deleteDoctor(d._id); // borra o doctor da BD polo seu _id
+    doctores.value.splice(index, 1); // e quítao da táboa
+    console.log("Doctor eliminado correctamente");
+  } catch (error) {
+    console.error("Erro ao eliminar doctor:", error);
+  }
+}
+
 
 //=============== FUNCIONES AUXILIARES ==================
 
@@ -200,6 +250,9 @@ const limpiarFormdoc = () => {
       novoDoctor[key] = ""; //reinicia el resto
     }
   });
+  // quitamos o _id do doctor que estabamos editando: se quedase como "" o seguinte doctor novo
+  // enviaríase con _id: "" e MongoDB rexeitaríao (non é un _id válido)
+  delete novoDoctor._id;
   editando.value = false;
   correoInvalido.value = false;
   telefonoIncorrecto.value = false;
@@ -252,14 +305,14 @@ form {
   flex: 3;
 }
 
-/* ID: curto, como o DNI en pacientes */
+/* ID: ancho fixo para os 24 caracteres do _id de MongoDB (ex: 6acf2774877a95157e0a6358) */
 .campo-id {
   flex: 0 0 auto;
 }
 
 .campo-id input {
   flex: none;
-  width: 9em;
+  width: 15em;
 }
 
 /* teléfono (9 cifras): ancho fixo, non encolle; o espazo que sobra vai para o correo */
