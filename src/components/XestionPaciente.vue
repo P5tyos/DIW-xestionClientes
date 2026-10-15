@@ -109,18 +109,32 @@
           </a>
         </label>
 
-        <button
-          type="submit"
-          class="btn-guardar"
-          :disabled="
-            novoPaciente.dnipac === '' || 
-              novoPaciente.nomepac === '' ||
-              novoPaciente.apelpac === '' ||
-              novoPaciente.movilpac === '' ||
-              !novoPaciente.lopdpac "
-        >
-          Gardar
-        </button>
+        <!-- Gardar e Eliminar na mesma liña -->
+        <div class="botons-gardar">
+          <button
+            type="submit"
+            class="btn-guardar"
+            :disabled="
+              novoPaciente.dnipac === '' || 
+                novoPaciente.nomepac === '' ||
+                novoPaciente.apelpac === '' ||
+                novoPaciente.movilpac === '' ||
+                !novoPaciente.lopdpac "
+          >
+            Gardar
+          </button>
+          <!-- Eliminar só aparece cando hai un paciente cargado no formulario (✏️ ou 🔍);
+               type="button" para que non envíe o formulario (se non, tamén gardaría) -->
+          <button
+            v-if="editando"
+            type="button"
+            class="btn-eliminar"
+            @click="eliminarPacienteCargado"
+          >
+            Eliminar
+          </button>
+        </div>
+
         <p class="nota-obrigatorio"><span aria-hidden="true">*</span> campo obrigatorio</p>
       </div>
     </form>
@@ -180,6 +194,13 @@ import {
   getPacienteByDni 
 } from "../api/pacientes.js";
 
+import {
+  alertaExito,
+  alertaError,
+  alertaConfirmacion, 
+  alertaInfo
+} from '../utils/alertas.js'
+
 
 const pacientes = ref([]); //almacena la lista de pacientes e os seus cambios
 const provincias = ref([]); //almacena a lista de provincias e os seus cambios
@@ -229,9 +250,11 @@ async function cargarMunicipios() {
 municipios.value = await obtenerMunicipios(provincia.id); 
 }
 
-/// Zona de métodos ou funcións
+// Zona de métodos ou funcións
 
-// botón Gardar: modifica o paciente se estamos editando, se non créao novo
+// XXXXXXXXXXXXXXXXXXXXXX  FUNCIONES PRINCIPALES  XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+
+// botón Gardar: modifica o paciente se estamos editando, o créao novo si un no existe
 async function guardarPaciente() {
   // validamos DNI e teléfono tamén aquí: se se preme Enter dentro dun campo, o @blur non se executa
   // e o dato sen validar chegaría á BD. Se algún non vale, mostramos o erro e non gardamos.
@@ -252,33 +275,50 @@ async function guardarPaciente() {
             pacientes.value[index] =pacienteModificado;
           }
           console.log("Paciente modificado correctamente")
+          alertaExito('El paciente se ha modificado correctamente');
+          
         } else {
           const pacienteGuardado = await savePaciente(novoPaciente);
           pacientes.value.push(pacienteGuardado);
           console.log("Paciente gardado correctamente");
+          alertaExito('El paciente se ha guardado correctamente');
         }
-            limpiarFormpac();  //baleira o formulario e sae do modo edición
+        limpiarFormpac();  //baleira o formulario e sae do modo edición
+        pacientes.value = await getPacientes();
   } catch (error) {
     console.error("Error ao gardar paciente:", error);
+    alertaError('Error al guardar paciente. Contacte con el administrador del sistema!')
   }
-  pacientes.value = await getPacientes();
 }
 
 // botón 🗑️: borra o paciente da BD e da táboa
 async function eliminarPaciente(index) {
-  // pide confirmación antes de borrar; se o usuario preme Cancelar non se fai nada
-  const p = pacientes.value[index];
-  if (!confirm(`Seguro que queres eliminar a ${p.nomepac} ${p.apelpac}?`)) {
-    return;
+  const p = pacientes.value[index]; // o paciente da lista 
+  // pide confirmación; Swal devolve un obxecto, por iso comprobamos isConfirmed
+  const confirmacion = await alertaConfirmacion(`Seguro que queres eliminar a ${p.nomepac} ${p.apelpac}?`);
+  if (!confirmacion.isConfirmed) {
+    return; //si usuario cancela, no se borra nada
   }
-
   try {
-    await deletePaciente(pacientes.value[index].dnipac); //elimina o paciente da base de datos
+    await deletePaciente(p.dnipac); //elimina o paciente da base de datos
     pacientes.value.splice(index, 1); //elimina o paciente da lista
+    // se era o paciente cargado no formulario, baleirámolo (se non, Gardar intentaría modificar un paciente que xa non existe)
+    if (editando.value && novoPaciente.dnipac === p.dnipac) {
+      limpiarFormpac();
+    }
     console.log("Paciente eliminado correctamente");
-    getPacientes(); // Actualiza la lista de pacientes después de eliminar
+    alertaExito('El paciente se ha eliminado correctamente');
   } catch (error) {
     console.error("Error ao eliminar paciente:", error);
+    alertaError('Error al eliminar paciente. Contacte con el administrador del sistema!');
+  }
+}
+
+// botón Eliminar do formulario: busca na lista o paciente cargado e bórrao con eliminarPaciente
+function eliminarPacienteCargado() {
+  const index = pacientes.value.findIndex((p) => p.dnipac === novoPaciente.dnipac);
+  if (index !== -1) {
+    eliminarPaciente(index);
   }
 }
 
@@ -290,10 +330,57 @@ async function editarUsuario(index){
   delete novoPaciente._id;
   editando.value = true;
   await cargarMunicipios();
+}
+// botón 🧹: baleira o formulario, sae do modo edición e quita as mensaxes de erro
+const limpiarFormpac = () => {
+  Object.keys(novoPaciente).forEach((key) => {
+    if (typeof novoPaciente[key] === "boolean"){
+      novoPaciente[key] = false;   //reinicia los booleanos a false
+    } else {
+      novoPaciente[key] = ""; //reinicia el resto
+    }
+  })
+  editando.value = false;
+  documentoInvalido.value = false;
+  correoInvalido.value = false;
+  telefonoIncorrecto.value = false;
+  municipios.value = []; // baleira tamén a lista de municipios da provincia anterior
+};
 
+// botón 🔍: busca o paciente polo DNI na BD e cárgao no formulario para editalo
+async function buscarPaciente() {
+  try {
+    const dni = novoPaciente.dnipac.trim();
+    if (!dni) {
+      console.log ("introduce un dni!");
+      alertaInfo("Introduce un Dni/Nie para buscar un paciente.")
+      return ;
+    }
+    const paciente= await getPacienteByDni(dni);
+    Object.assign(novoPaciente, paciente);
+    //evitar que se carge el _id de MongoDB no formulario
+    delete novoPaciente._id;
+    editando.value = true;
+    await cargarMunicipios();
+
+    console.log("Paciente encontrad", paciente);
+    alertaExito("Paciente encontrado")
+  } catch(error){
+      if (error.response?.status === 404 ){
+        // non existe: saímos do modo edición para que Gardar cree un paciente novo en vez de modificar un que non existe
+        // (co DNI e 🔍 bloqueados ao editar isto xa non debería pasar desde o formulario, pero queda como seguridade)
+        editando.value = false;
+        console.log("Paciente no encontrad");
+        alertaError("No se ha encontrado paciente con este DNI/NIE.")
+      } else {
+        console.log("Error al buscar paciente:",error)
+        alertaError("Error al buscar paciente.")
+
+      }
+  }
 }
 
-// Zona de funcións auxiliares
+// XXXXXXXXXXXXXXXXXXXXXX  FUNCIONES AUXILIARES  XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
 // comproba que un DNI (8 números + letra) ten a letra correcta
 function validarDNI(valor) {
@@ -358,51 +445,9 @@ function formatearNome(valor) {
     .join(" ")
 }
 
-// botón 🧹: baleira o formulario, sae do modo edición e quita as mensaxes de erro
-const limpiarFormpac = () => {
-  Object.keys(novoPaciente).forEach((key) => {
-    if (typeof novoPaciente[key] === "boolean"){
-      novoPaciente[key] = false;   //reinicia los booleanos a false
-    } else {
-      novoPaciente[key] = ""; //reinicia el resto
-    }
-  })
-  editando.value = false;
-  documentoInvalido.value = false;
-  correoInvalido.value = false;
-  telefonoIncorrecto.value = false;
-  municipios.value = []; // baleira tamén a lista de municipios da provincia anterior
-};
-
-// botón 🔍: busca o paciente polo DNI na BD e cárgao no formulario para editalo
-async function buscarPaciente() {
-  try {
-    const dni = novoPaciente.dnipac.trim();
-    if (!dni) {
-      console.log ("introduce un dni!");
-      return ;
-    }
-    const paciente= await getPacienteByDni(dni);
-    Object.assign(novoPaciente, paciente);
-    //evitar que se carge el _id de MongoDB no formulario
-    delete novoPaciente._id;
-    editando.value = true;
-    await cargarMunicipios();
-
-    console.log("Paciente encontrad", paciente);
-  } catch(error){
-      if (error.response?.status === 404 ){
-        // non existe: saímos do modo edición para que Gardar cree un paciente novo en vez de modificar un que non existe
-        // (co DNI e 🔍 bloqueados ao editar isto xa non debería pasar desde o formulario, pero queda como seguridade)
-        editando.value = false;
-        console.log("Paciente no encontrad");
-      } else {
-        console.log("Error al buscar paciente:",error)
-      }
-  }
-}
-
 </script>
+
+<!--XXXXXXXXXXXXXXXXXXXXXX  ZONA DE ESTILOS  XXXXXXXXXXXXXXXXXXXXXXXX -->
 
 <style scoped>
 .xestion-pacientes {
@@ -567,6 +612,25 @@ input.campo-erro {
 
 .btn-guardar:hover:enabled {
   background-color: var(--accent-dark);
+}
+
+/* Gardar e Eliminar un ao lado do outro */
+.botons-gardar {
+  display: flex;
+  gap: 1rem;
+}
+
+/* Eliminar: mesma forma que Gardar, en vermello (texto branco con contraste 5:1) */
+.btn-eliminar {
+  background-color: var(--danger);
+  color: white;
+  border: none;
+  padding: 0.4rem 1.5rem;
+  cursor: pointer;
+}
+
+.btn-eliminar:hover {
+  background-color: #9a3b3b;
 }
 
 .btn-guardar:disabled {
