@@ -23,7 +23,6 @@
           <!-- 🔍 tamén se bloquea mentres editamos: co DNI bloqueado só volvería cargar o mesmo paciente -->
           <button type="button" @click="buscarPaciente" :disabled="editando" title="Buscar" aria-label="Buscar paciente por DNI">🔍</button>
           <button type="button" @click="limpiarFormpac" title="Limpar formulario" aria-label="Limpar formulario">🧹</button>
-          <span v-if="documentoInvalido" id="dni-erro" class="mensaxe-erro" role="alert">DNI/NIE non válido</span>
         </div>
         <div class="campo campo-apellido">
           <label for="apelido">Apelido:<span class="obrigatorio" aria-hidden="true">*</span></label>
@@ -54,7 +53,6 @@
             @focus="correoInvalido = false"
             @blur="validarCorreo"
           />
-          <span v-if="correoInvalido" id="correo-erro" class="mensaxe-erro" role="alert">Correo non válido</span>
         </div>
         <div class="campo campo-telefono">
           <label for="telefono">Telefono:<span class="obrigatorio" aria-hidden="true">*</span></label>
@@ -73,7 +71,6 @@
             @focus="telefonoIncorrecto = false"
             @blur="validarTelefono"
           />
-          <span v-if="telefonoIncorrecto" id="telefono-erro" class="mensaxe-erro" role="alert">Telefono non válido</span>
         </div>
       </div>
       <div class="fila">
@@ -110,6 +107,20 @@
         </label>
 
         <!-- Gardar e Eliminar na mesma liña -->
+        <!-- mensaxes de erro: xuntas enriba de Gardar (ao lado dos inputs non había sitio), cun exemplo válido.
+             Manteñen os id para que o aria-describedby de cada input siga apuntando á súa mensaxe -->
+        <div v-if="documentoInvalido || correoInvalido || telefonoIncorrecto" class="erros">
+          <p v-if="documentoInvalido" id="dni-erro" class="mensaxe-erro" role="alert">
+            DNI/NIE non válido. Exemplo: 12345678Z ou X1234567L
+          </p>
+          <p v-if="correoInvalido" id="correo-erro" class="mensaxe-erro" role="alert">
+            Correo non válido. Exemplo: usuario@exemplo.com
+          </p>
+          <p v-if="telefonoIncorrecto" id="telefono-erro" class="mensaxe-erro" role="alert">
+            Teléfono non válido: 9 cifras empezando por 6 ou 7. Exemplo: 612345678
+          </p>
+        </div>
+
         <div class="botons-gardar">
           <button
             type="submit"
@@ -578,13 +589,24 @@ td button {
 }
 
 /* ---------- validación ---------- */
+/* input con erro: borde vermello máis marcado. O box-shadow engrosa o borde sen cambiar
+   o tamaño do input (un border máis groso movería os campos da fila) */
 input.campo-erro {
   border-color: #b00020;
+  box-shadow: 0 0 0 2px #b00020;
+  background-color: #ffe6e6;
+}
+
+/* caixa coas mensaxes de erro, enriba dos botóns */
+.erros {
+  padding: 0.4rem 1rem;
+  border-left: 4px solid #b00020;
   background-color: #ffe6e6;
 }
 
 .mensaxe-erro {
-  font-size: 0.8rem;
+  margin: 0.2rem 0;
+  font-size: 0.85rem;
   color: #b00020;
 }
 
