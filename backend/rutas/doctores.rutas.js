@@ -3,6 +3,16 @@ import Doctor from "../modelos/Doctor.js";
 
 const router = express.Router();
 
+// os doctores non teñen ningún campo único: consideramos duplicado só un doctor con TODOS os datos iguais
+const datosDoctor = (body) => ({
+    apeldoc: body.apeldoc,
+    nomedoc: body.nomedoc,
+    coledoc: body.coledoc,
+    movildoc: body.movildoc,
+    maildoc: body.maildoc ?? "",
+    espedoc: body.espedoc,
+});
+
 //eliminar
 router.delete("/:id", async (req, res) => {
     try {
@@ -24,13 +34,11 @@ router.delete("/:id", async (req, res) => {
 router.post("/", async (req, res) => {
     try {
         console.log("Datos Recibidos: ",req.body);
-        /* if using _id, no need to check duplicats
-        const doctorExistente = await Doctor.findOne({ iddoc: req.body.iddoc });
-        if (doctorExistente){
-            return res.status(409).json({
-                mensaje: "Ya existe un doctor con este ID",
-            })
-        }*/  
+        // se xa hai un doctor con exactamente os mesmos datos, non o gardamos outra vez
+        const doctorIgual = await Doctor.findOne(datosDoctor(req.body));
+        if (doctorIgual) {
+            return res.status(409).json({ mensaje: "Ya existe un doctor con los mismos datos" });
+        }
 
         const doctor = new Doctor(req.body);
         const nuevoDoctor = await doctor.save();
@@ -61,6 +69,11 @@ router.put("/:id", async (req, res) => {
         // así que borramos o _id do body aínda que alguén o envíe
         //delete req.body.iddoc; no need if we use _id
         delete req.body._id;
+        // tampouco se pode modificar un doctor para que quede igual que outro (o propio non conta: $ne = distinto de)
+        const doctorIgual = await Doctor.findOne({ ...datosDoctor(req.body), _id: { $ne: req.params.id } });
+        if (doctorIgual) {
+            return res.status(409).json({ mensaje: "Ya existe un doctor con los mismos datos" });
+        }
         const doctor = await Doctor.findByIdAndUpdate(req.params.id, req.body, { new: true });
         if (!doctor) {
             return res.status(404).json({ mensaje: "Doctor no encontrado" });

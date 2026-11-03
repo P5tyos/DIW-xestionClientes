@@ -9,7 +9,7 @@
           <!-- o ID é o _id que xera MongoDB: baleiro nun doctor novo, vese ao cargar un (✏️) e non se pode editar -->
           <input id="id" v-model="novoDoctor._id" type="text" disabled class="centrado" />
           <!-- type="button" para que non envíe o formulario ao pulsalo -->
-          <button type="button" @click="limpiarFormdoc" title="Limpar formulario" aria-label="Limpar formulario">
+          <button type="button" @click="limparConConfirmacion" title="Limpar formulario" aria-label="Limpar formulario">
             🧹
           </button>
         </div>
@@ -23,7 +23,8 @@
           <input id="nome" v-model="novoDoctor.nomedoc" type="text" required autocomplete="given-name"
             @blur="novoDoctor.nomedoc = formatearNome(novoDoctor.nomedoc)" />
         </div>
-        <!-- fieldset + legend: os lectores de pantalla len "Colexiado" antes de Si/Non -->
+        <!-- fieldset + legend: os lectores de pantalla len "Colexiado" antes de Si/Non.
+             Nun doctor novo non hai ningún marcado (coledoc: null): hai que elixir, e baleiro non filtra -->
         <fieldset class="campo campo-colexiado">
           <legend>
             Colexiado:<span class="obrigatorio" aria-hidden="true">*</span>
@@ -35,22 +36,40 @@
         </fieldset>
       </div>
       <!-- fila 2: teléfono, correo e especialidade -->
+      <!-- validación: o erro aparece ao saír do campo (@blur); mentres hai erro, revalídase con cada tecla (@input)
+           e desaparece en canto o valor é correcto. O valor escrito nunca se borra -->
       <div class="fila">
         <div class="campo campo-telefono">
           <label for="telefono">Telefono:<span class="obrigatorio" aria-hidden="true">*</span></label>
-          <input id="telefono" v-model="novoDoctor.movildoc" type="tel" inputmode="numeric" required maxlength="9"
-            autocomplete="tel" class="centrado" :class="{ 'campo-erro': telefonoIncorrecto }"
-            :aria-invalid="telefonoIncorrecto" aria-describedby="telefono-erro" @focus="telefonoIncorrecto = false"
-            @blur="validarTelefono" />
-          <span v-if="telefonoIncorrecto" id="telefono-erro" class="mensaxe-erro" role="alert">Telefono non
-            válido</span>
+          <input
+            id="telefono"
+            v-model="novoDoctor.movildoc"
+            type="tel"
+            inputmode="numeric"
+            required
+            maxlength="9"
+            autocomplete="tel"
+            class="centrado"
+            :class="{ 'campo-erro': telefonoIncorrecto }"
+            :aria-invalid="telefonoIncorrecto"
+            aria-describedby="telefono-erro"
+            @blur="validarTelefono"
+            @input="telefonoIncorrecto && validarTelefono()"
+          />
         </div>
         <div class="campo campo-correo">
           <label for="correo">Correo:</label>
-          <input id="correo" v-model="novoDoctor.maildoc" type="email" autocomplete="email"
-            :class="{ 'campo-erro': correoInvalido }" :aria-invalid="correoInvalido" aria-describedby="correo-erro"
-            @focus="correoInvalido = false" @blur="validarCorreo" />
-          <span v-if="correoInvalido" id="correo-erro" class="mensaxe-erro" role="alert">Correo non válido</span>
+          <input
+            id="correo"
+            v-model="novoDoctor.maildoc"
+            type="email"
+            autocomplete="email"
+            :class="{ 'campo-erro': correoInvalido }"
+            :aria-invalid="correoInvalido"
+            aria-describedby="correo-erro"
+            @blur="validarCorreo"
+            @input="correoInvalido && validarCorreo()"
+          />
         </div>
         <div class="campo campo-especialidade">
           <label for="especialidade">Especialidade:<span class="obrigatorio" aria-hidden="true">*</span></label>
@@ -63,20 +82,65 @@
         </div>
       </div>
       <div class="fila fila-gardar">
-        <button type="submit" class="btn-guardar" :disabled="novoDoctor.nomedoc === '' ||
-          novoDoctor.apeldoc === '' ||
-          novoDoctor.movildoc === '' ||
-          novoDoctor.espedoc === ''
-          ">
-          Gardar
-        </button>
+        <!-- mensaxes de erro: xuntas enriba de Gardar, cun exemplo válido.
+             Teñen os id aos que apunta o aria-describedby de cada input -->
+        <div v-if="correoInvalido || telefonoIncorrecto" class="erros">
+          <p v-if="correoInvalido" id="correo-erro" class="mensaxe-erro" role="alert">
+            Correo non válido. Exemplo: usuario@exemplo.com
+          </p>
+          <p v-if="telefonoIncorrecto" id="telefono-erro" class="mensaxe-erro" role="alert">
+            Teléfono non válido: 9 cifras empezando por 6 ou 7. Exemplo: 612345678
+          </p>
+        </div>
+
+        <!-- Gardar e Eliminar na mesma liña -->
+        <div class="botons-gardar">
+          <!-- un botón disabled non recibe eventos do rato, así que a axuda (motivoNonGardar)
+               móstrase ao pasar o rato por riba do span que o envolve -->
+          <span class="axuda-gardar" :data-axuda="motivoNonGardar">
+            <button
+              type="submit"
+              class="btn-guardar"
+              :disabled="motivoNonGardar !== ''"
+            >
+              Gardar
+            </button>
+          </span>
+          <!-- Eliminar só aparece cando hai un doctor cargado no formulario (✏️);
+               type="button" para que non envíe o formulario (se non, tamén gardaría) -->
+          <button
+            v-if="editando"
+            type="button"
+            class="btn-eliminar"
+            :disabled="gardando"
+            @click="eliminarDoctorCargado"
+          >
+            Eliminar
+          </button>
+        </div>
+
         <p class="nota-obrigatorio">
           <span aria-hidden="true">*</span> campo obrigatorio
         </p>
       </div>
     </form>
-    <h3>📋 Listaxe de doctores</h3>
-    <table v-if="doctores.length > 0">
+    <!-- título da listaxe co botón para xerar o PDF da listaxe (filtrada) -->
+    <div class="cabecera-listado">
+      <h3>📋 Listaxe de doctores</h3>
+      <button
+        type="button"
+        class="btn-pdf"
+        :disabled="doctoresFiltrados.length === 0"
+        @click="exportarDoctores"
+      >
+        🖨️ PDF
+      </button>
+    </div>
+    <!-- mentres non se edita, o que se escribe no formulario filtra a táboa -->
+    <p v-if="filtroActivo" class="info-filtro">
+      Mostrando {{ doctoresFiltrados.length }} de {{ doctores.length }} doctores (filtrados polo formulario)
+    </p>
+    <table v-if="doctoresFiltrados.length > 0">
       <caption>
         Listaxe de doctores
       </caption>
@@ -93,7 +157,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="(d, index) in doctores" :key="d._id">
+        <tr v-for="(d, index) in doctoresFiltrados" :key="d._id">
           <!-- números e códigos (nº, ID, teléfono) centrados; o texto queda á esquerda -->
           <td class="centrado">{{ index + 1 }}</td>
           <td class="centrado">{{ d._id }}</td>
@@ -103,10 +167,11 @@
           <td class="centrado">{{ d.movildoc }}</td>
           <td>{{ d.espedoc }}</td>
           <td class="centrado">
-            <button @click="editarDoctor(index)" title="Editar" :aria-label="`Editar a ${d.nomedoc} ${d.apeldoc}`">
+            <!-- doctores.indexOf(d): a posición na listaxe completa (co filtro, o index da fila non é o mesmo) -->
+            <button @click="editarDoctor(doctores.indexOf(d))" title="Editar" :aria-label="`Editar a ${d.nomedoc} ${d.apeldoc}`">
               ✏️
             </button>
-            <button @click="eliminarDoctor(index)" title="Eliminar"
+            <button @click="eliminarDoctor(doctores.indexOf(d))" title="Eliminar"
               :aria-label="`Eliminar a ${d.nomedoc} ${d.apeldoc}`">
               🗑️
             </button>
@@ -114,149 +179,316 @@
         </tr>
       </tbody>
     </table>
+    <p v-else-if="filtroActivo">Ningún doctor coincide co filtro.</p>
     <p v-else>Non hai doctores cargados.</p>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from "vue";
-import { obtenerEspecialidades } from "../api/especialidades";
+
+/// Zona de declaracións
+
+import { ref, reactive, computed, onMounted } from "vue";
+import { obtenerEspecialidades } from "../api/especialidades.js";
 import {
   getDoctores,
   saveDoctor,
   deleteDoctor,
-  getDoctorByEspecialidad,
   modifyDoctor,
 } from "../api/doctores.js";
+import {
+  alertaExito,
+  alertaError,
+  alertaConfirmacion,
+  alertaInfo
+} from "../utils/alertas.js";
+import { generarPDF } from "../utils/pdf.js";
 
-const doctores = ref([]);
-const especialidades = ref([]);
+const doctores = ref([]); //lista de doctores da BD
+const especialidades = ref([]); //lista de especialidades para o select
 
 const editando = ref(false);
+// true mentres se envía un gardado ou un borrado ao servidor: bloquea Gardar e Eliminar para non envialo dúas veces
+const gardando = ref(false);
 const correoInvalido = ref(false);
 const telefonoIncorrecto = ref(false);
 
-// sen ID propio: ao editar, Object.assign engade o _id do doctor e con el sabemos cal modificar
+// campos do formulario (para comparar cambios, filtrar e baleirar)
+const CAMPOS = ["apeldoc", "nomedoc", "coledoc", "movildoc", "maildoc", "espedoc"];
+// copia dos datos do doctor tal como se cargou (✏️); null se o formulario é dun doctor novo
+const copiaOrixinal = ref(null);
+
+// sen ID propio: ao editar, Object.assign engade o _id do doctor e con el sabemos cal modificar.
+// coledoc empeza en null (ningún radio marcado): é obrigatorio e hai que elixilo
 const novoDoctor = reactive({
   apeldoc: "",
   nomedoc: "",
-  maildoc: "",
+  coledoc: null,
   movildoc: "",
-  coledoc: false,
+  maildoc: "",
   espedoc: "",
 });
 
-//=============== FUNCIONES PRINCIPALES de BBDD ==================
-onMounted(async () => {
-  doctores.value = await getDoctores();
-  especialidades.value = await obtenerEspecialidades();
+// por que non se pode gardar aínda ("" se xa se pode). Gardar desactívase mentres non estea baleiro,
+// e o texto móstrase como axuda ao pasar o rato por riba do botón
+const motivoNonGardar = computed(() => {
+  if (gardando.value) {
+    return "Gardando…";
+  }
+  if (correoInvalido.value || telefonoIncorrecto.value) {
+    return "Corrixe os campos marcados en vermello para gardar";
+  }
+  const falta = [];
+  if (novoDoctor.apeldoc.trim() === "") falta.push("Apelido");
+  if (novoDoctor.nomedoc.trim() === "") falta.push("Nome");
+  if (novoDoctor.coledoc === null) falta.push("Colexiado");
+  if (novoDoctor.movildoc.trim() === "") falta.push("Teléfono");
+  if (novoDoctor.espedoc === "") falta.push("Especialidade");
+  return falta.length ? "Para gardar falta: " + falta.join(", ") : "";
 });
 
-async function guardarDoctor() {
-  try {
-        if (editando.value){
-          // identificamos o doctor polo _id de MongoDB
-          const doctorModificado = await modifyDoctor(novoDoctor._id, novoDoctor);
-          const index = doctores.value.findIndex (
-            (d) => d._id === novoDoctor._id
-          );
+// texto para comparar sen ter en conta maiúsculas nin acentos ("José" → "jose")
+function normalizar(texto) {
+  return String(texto ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+}
 
-          if (index !== -1){
-            doctores.value[index] = doctorModificado;
-          }
-          console.log("Doctor modificado correctamente")
-        } else {
-          const doctorGuardado = await saveDoctor(novoDoctor);
-          doctores.value.push(doctorGuardado);
-          console.log("Doctor gardado correctamente");
-        }
-            limpiarFormdoc();  //baleira o formulario e sae do modo edición
-  } catch (error) {
-    console.error("Error ao gardar doctor:", error);
+// un campo do formulario ten algo? (colexiado: se se marcou Si ou Non)
+function campoCuberto(campo) {
+  return campo === "coledoc" ? novoDoctor.coledoc !== null : normalizar(novoDoctor[campo]) !== "";
+}
+
+// hai filtro se non estamos editando e hai algo escrito/marcado nalgún campo
+const filtroActivo = computed(() => !editando.value && CAMPOS.some(campoCuberto));
+
+// doctores que coinciden co formulario: cada campo cuberto ten que estar contido no do doctor
+// (colexiado ten que ser igual). Ao editar un doctor móstrase a listaxe completa
+const doctoresFiltrados = computed(() => {
+  if (!filtroActivo.value) {
+    return doctores.value;
   }
-  doctores.value = await getDoctores();
+  return doctores.value.filter((d) =>
+    CAMPOS.every((campo) => {
+      if (!campoCuberto(campo)) return true;
+      if (campo === "coledoc") return d.coledoc === novoDoctor.coledoc;
+      return normalizar(d[campo]).includes(normalizar(novoDoctor[campo]));
+    })
+  );
+});
+
+/// Zona de ciclo de vida
+
+// ao abrir a páxina: carga as especialidades e a lista de doctores (cada unha co seu aviso se falla)
+onMounted(async () => {
+  try {
+    especialidades.value = await obtenerEspecialidades();
+  } catch (error) {
+    console.error("Erro ao cargar as especialidades:", error);
+    alertaError("Non se puideron cargar as especialidades. Contacte co administrador do sistema.");
+  }
+  await cargarDoctores();
+});
+
+/// Zona de métodos ou funcións
+
+// botón Gardar: modifica o doctor se estamos editando (pedindo confirmación), ou créao se é novo
+async function guardarDoctor() {
+  // validamos correo e teléfono tamén aquí: se se preme Enter dentro dun campo, o @blur non se executa
+  validarCorreo();
+  validarTelefono();
+  if (correoInvalido.value || telefonoIncorrecto.value) {
+    return;
+  }
+
+  if (editando.value) {
+    // se non se cambiou nada non hai nada que gardar
+    if (!haiCambiosSenGardar()) {
+      alertaInfo("Non hai cambios que gardar.");
+      return;
+    }
+    // pedimos confirmación; ao confirmar xa non se mostra mensaxe de éxito (o cambio vese na táboa)
+    const confirmacion = await alertaConfirmacion(`Seguro que queres gardar os cambios de ${novoDoctor.nomedoc} ${novoDoctor.apeldoc}?`);
+    if (!confirmacion.isConfirmed) {
+      return;
+    }
+  }
+
+  gardando.value = true;
+  try {
+    if (editando.value) {
+      await modifyDoctor(novoDoctor._id, novoDoctor); // identificamos o doctor polo _id de MongoDB
+      console.log("Doctor modificado correctamente");
+    } else {
+      await saveDoctor(novoDoctor);
+      console.log("Doctor gardado correctamente");
+      alertaExito("Doctor gardado correctamente."); // gardar un novo non pide confirmación, así que si se avisa
+    }
+    limpiarFormdoc(); //baleira o formulario e sae do modo edición
+  } catch (error) {
+    console.error("Erro ao gardar doctor:", error);
+    if (error.response?.status === 409) {
+      // o backend responde 409 se xa hai un doctor con todos os datos iguais
+      alertaError("Xa existe un doctor cos mesmos datos.");
+    } else {
+      alertaError("Erro ao gardar o doctor. Contacte co administrador do sistema.");
+    }
+    return;
+  } finally {
+    gardando.value = false; // tanto se foi ben como se fallou, desbloqueamos
+  }
+  await cargarDoctores(); // recarga a lista (ten o seu propio aviso se falla: o doctor si se gardou)
+}
+
+// botón 🗑️: borra o doctor da BD e da táboa, despois de confirmar
+async function eliminarDoctor(index) {
+  if (gardando.value) {
+    return; // xa hai un gardado ou borrado en curso
+  }
+  const d = doctores.value[index];
+  // pide confirmación; Swal devolve un obxecto, por iso comprobamos isConfirmed
+  const confirmacion = await alertaConfirmacion(`Seguro que queres eliminar a ${d.nomedoc} ${d.apeldoc}?`);
+  if (!confirmacion.isConfirmed) {
+    return; //se o usuario cancela, non se borra nada
+  }
+  gardando.value = true;
+  try {
+    await deleteDoctor(d._id); // borra o doctor da BD polo seu _id
+    doctores.value.splice(index, 1); // e quítao da táboa
+    // se era o doctor cargado no formulario, baleirámolo (se non, Gardar intentaría modificar un doctor que xa non existe)
+    if (editando.value && novoDoctor._id === d._id) {
+      limpiarFormdoc();
+    }
+    console.log("Doctor eliminado correctamente"); // sen mensaxe de éxito: xa se confirmou e a fila desaparece
+  } catch (error) {
+    console.error("Erro ao eliminar doctor:", error);
+    alertaError("Erro ao eliminar o doctor. Contacte co administrador do sistema.");
+  } finally {
+    gardando.value = false;
+  }
+}
+
+// botón Eliminar do formulario: busca na lista o doctor cargado e bórrao con eliminarDoctor
+function eliminarDoctorCargado() {
+  const index = doctores.value.findIndex((d) => d._id === novoDoctor._id);
+  if (index !== -1) {
+    eliminarDoctor(index);
+  }
 }
 
 // botón ✏️: carga o doctor da táboa no formulario e activa o modo edición
-function editarDoctor(index) {
+// (se no formulario hai datos sen gardar, pregunta antes de substituílos)
+async function editarDoctor(index) {
+  if (!(await confirmarDescartar())) {
+    return;
+  }
+  limpiarFormdoc(); // baleiramos antes: Object.assign deixaría os datos vellos nos campos que este doctor non teña
   // copia tamén o _id: precisámolo para que Gardar saiba que doctor modificar
   // (ao revés que en pacientes, que se identifican polo DNI e o _id bórrase)
   Object.assign(novoDoctor, doctores.value[index]);
   editando.value = true;
+  copiaOrixinal.value = fotoFormulario(); // para saber despois se se cambiou algo
 }
 
-// botón 🗑️: borra un Doctor da BD e da táboa
-async function eliminarDoctor(index) {
-  // pide confirmación antes de borrar; se o usuario preme Cancelar non se fai nada
-  const d = doctores.value[index];
-  if (!confirm(`Seguro que queres eliminar a ${d.nomedoc} ${d.apeldoc}?`)) {
+// baleira o formulario, sae do modo edición e quita as mensaxes de erro (non pregunta: úsase tamén despois de gardar/eliminar)
+function limpiarFormdoc() {
+  CAMPOS.forEach((campo) => {
+    novoDoctor[campo] = campo === "coledoc" ? null : "";
+  });
+  // quitamos o resto de claves que trouxo Object.assign (_id, __v...): un _id baleiro faría fallar o seguinte doctor novo
+  Object.keys(novoDoctor).forEach((clave) => {
+    if (!CAMPOS.includes(clave)) delete novoDoctor[clave];
+  });
+  editando.value = false;
+  correoInvalido.value = false;
+  telefonoIncorrecto.value = false;
+  copiaOrixinal.value = null;
+}
+
+// botón 🧹: se hai datos sen gardar pide confirmación antes de baleirar o formulario
+async function limparConConfirmacion() {
+  if (await confirmarDescartar()) {
+    limpiarFormdoc();
+  }
+}
+
+// botón 🖨️ PDF: abre nunha pestana nova a listaxe que se ve na táboa (filtrada se hai filtro).
+// Sen o _id de MongoDB: en papel non lle di nada a ninguén
+function exportarDoctores() {
+  const total = doctoresFiltrados.value.length;
+  generarPDF(
+    "Listaxe de doctores",
+    ["Apelido", "Nome", "Teléfono", "Especialidade", "Colexiado"],
+    doctoresFiltrados.value.map((d) => [d.apeldoc, d.nomedoc, d.movildoc, d.espedoc, d.coledoc ? "Si" : "Non"]),
+    `${total} ${total === 1 ? "doctor" : "doctores"}` + (filtroActivo.value ? " (listaxe filtrada)" : "")
+  );
+}
+
+// Zona de funcións auxiliares
+
+// carga a lista de doctores da BD; se falla (backend ou MongoDB caídos) avisa en vez de deixar a táboa baleira sen máis
+async function cargarDoctores() {
+  try {
+    doctores.value = await getDoctores();
+  } catch (error) {
+    console.error("Erro ao cargar os doctores:", error);
+    alertaError("Non se puido cargar a lista de doctores. Contacte co administrador do sistema.");
+  }
+}
+
+// "foto" dos datos do formulario como texto, para comparar o estado actual co do doctor cargado
+function fotoFormulario() {
+  return JSON.stringify(CAMPOS.map((campo) => novoDoctor[campo] ?? ""));
+}
+
+// hai datos no formulario que se perderían?
+// - doctor cargado (✏️): se algo cambiou desde que se cargou
+// - doctor novo: se se escribiu ou marcou algo
+function haiCambiosSenGardar() {
+  if (copiaOrixinal.value !== null) {
+    return fotoFormulario() !== copiaOrixinal.value;
+  }
+  return CAMPOS.some(campoCuberto);
+}
+
+// se hai datos sen gardar, pregunta se se descartan. Devolve true se se pode continuar
+async function confirmarDescartar() {
+  if (!haiCambiosSenGardar()) {
+    return true;
+  }
+  const confirmacion = await alertaConfirmacion("Hai datos sen gardar que se perderán. Queres descartalos?");
+  return confirmacion.isConfirmed;
+}
+
+// valida o correo (campo opcional). Non borra o que escribiu o usuario: só marca o erro.
+// O erro quítase cando o correo é correcto ou cando se deixa baleiro (é opcional)
+function validarCorreo() {
+  const valor = novoDoctor.maildoc.trim().toLowerCase();
+  correoInvalido.value = valor !== "" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valor);
+  if (!correoInvalido.value) {
+    novoDoctor.maildoc = valor; // se é correcto gardámolo normalizado (en minúsculas e sen espazos)
+  }
+}
+
+// valida o teléfono (campo obrigatorio): móbil de 9 cifras que empeza por 6 ou 7.
+// Non borra o valor; se está baleiro non cambia nada (un erro xa visible mantense ata que o número sexa correcto)
+function validarTelefono() {
+  const valor = novoDoctor.movildoc.trim();
+  if (valor === "") {
     return;
   }
-
-  try {
-    await deleteDoctor(d._id); // borra o doctor da BD polo seu _id
-    doctores.value.splice(index, 1); // e quítao da táboa
-    console.log("Doctor eliminado correctamente");
-  } catch (error) {
-    console.error("Erro ao eliminar doctor:", error);
+  telefonoIncorrecto.value = !/^[67]\d{8}$/.test(valor);
+  if (!telefonoIncorrecto.value) {
+    novoDoctor.movildoc = valor; // se é correcto gardámolo sen espazos
   }
 }
-
-
-//=============== FUNCIONES AUXILIARES ==================
 
 // pon en maiúscula a primeira letra de cada palabra (ex: "ana maría" → "Ana María")
 function formatearNome(valor) {
   return valor
-    .split(" ")
-    .map(
-      (palabra) =>
-        palabra.charAt(0).toUpperCase() + palabra.slice(1).toLowerCase(),
-    )
+    .trim()        // quita os espazos do principio e do final (un nome só con espazos queda baleiro e Gardar desactívase)
+    .split(/\s+/)  // separa polas palabras aínda que haxa varios espazos seguidos entre elas
+    .map((palabra) => palabra.charAt(0).toUpperCase() + palabra.slice(1).toLowerCase())
     .join(" ");
 }
-
-// ao saír do campo Correo: valida o formato e baleira o campo se non vale
-function validarCorreo() {
-  const valor = novoDoctor.maildoc.trim().toLowerCase();
-  correoInvalido.value =
-    valor !== "" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valor);
-
-  if (correoInvalido.value) {
-    novoDoctor.maildoc = "";
-  } else {
-    novoDoctor.maildoc = valor;
-  }
-}
-
-// ao saír do campo Teléfono: valida que sexa un móbil de 9 cifras (6 ou 7 ao principio)
-function validarTelefono() {
-  const valor = novoDoctor.movildoc.trim();
-  telefonoIncorrecto.value = valor !== "" && !/^[67]\d{8}$/.test(valor);
-
-  if (telefonoIncorrecto.value) {
-    novoDoctor.movildoc = "";
-  } else {
-    novoDoctor.movildoc = valor;
-  }
-}
-
-// botón 🧹: baleira o formulario, sae do modo edición e quita as mensaxes de erro
-const limpiarFormdoc = () => {
-  Object.keys(novoDoctor).forEach((key) => {
-    if (typeof novoDoctor[key] === "boolean") {
-      novoDoctor[key] = false; //reinicia los booleanos a false
-    } else {
-      novoDoctor[key] = ""; //reinicia el resto
-    }
-  });
-  // quitamos o _id do doctor que estabamos editando: se quedase como "" o seguinte doctor novo
-  // enviaríase con _id: "" e MongoDB rexeitaríao (non é un _id válido)
-  delete novoDoctor._id;
-  editando.value = false;
-  correoInvalido.value = false;
-  telefonoIncorrecto.value = false;
-};
 </script>
 
 <style scoped>
@@ -275,6 +507,42 @@ h3 {
   background-color: var(--heading-bg);
   color: var(--text-h); /* texto escuro: o branco sobre este verde só tiña contraste 2:1 */
   text-align: center;
+}
+
+/* título da listaxe co botón do PDF ao lado */
+.cabecera-listado {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.cabecera-listado h3 {
+  flex: 1;
+  margin: 0;
+}
+
+.btn-pdf {
+  background-color: var(--accent);
+  color: white;
+  border: none;
+  padding: 0.4rem 1rem;
+  cursor: pointer;
+}
+
+.btn-pdf:hover:enabled {
+  background-color: var(--accent-dark);
+}
+
+.btn-pdf:disabled {
+  background-color: #e0e0e0;
+  color: #999;
+  cursor: not-allowed;
+}
+
+.info-filtro {
+  font-size: 0.85rem;
+  font-style: italic;
 }
 
 /* ---------- formulario ---------- */
@@ -398,13 +666,24 @@ td button {
 }
 
 /* ---------- validación ---------- */
+/* input con erro: borde vermello máis marcado. O box-shadow engrosa o borde sen cambiar
+   o tamaño do input (un border máis groso movería os campos da fila) */
 input.campo-erro {
   border-color: #b00020;
+  box-shadow: 0 0 0 2px #b00020;
+  background-color: #ffe6e6;
+}
+
+/* caixa coas mensaxes de erro, enriba dos botóns */
+.erros {
+  padding: 0.4rem 1rem;
+  border-left: 4px solid #b00020;
   background-color: #ffe6e6;
 }
 
 .mensaxe-erro {
-  font-size: 0.8rem;
+  margin: 0.2rem 0;
+  font-size: 0.85rem;
   color: #b00020;
 }
 
@@ -414,7 +693,7 @@ input.campo-erro {
   margin-left: 0.15rem;
 }
 
-/* ---------- fila de gardar: botón centrado, nota á dereita ---------- */
+/* ---------- fila de gardar: erros enriba dos botóns, centrados; nota á dereita ---------- */
 .fila-gardar {
   position: relative;
   flex-direction: column;
@@ -434,11 +713,60 @@ input.campo-erro {
   background-color: var(--accent-dark);
 }
 
+/* Gardar e Eliminar un ao lado do outro */
+.botons-gardar {
+  display: flex;
+  gap: 1rem;
+}
+
+/* Eliminar: mesma forma que Gardar, en vermello (texto branco con contraste 5:1) */
+.btn-eliminar {
+  background-color: var(--danger);
+  color: white;
+  border: none;
+  padding: 0.4rem 1.5rem;
+  cursor: pointer;
+}
+
+.btn-eliminar:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.btn-eliminar:hover:enabled {
+  background-color: #9a3b3b;
+}
+
 .btn-guardar:disabled {
   background-color: #e0e0e0;
   color: #999;
-  cursor: not-allowed;
   opacity: 0.7;
+  pointer-events: none; /* o rato "atravesa" o botón desactivado e chega ao span, que mostra a axuda */
+}
+
+/* axuda de Gardar: caixa escura enriba do botón, só cando hai motivo (data-axuda non baleiro) */
+.axuda-gardar {
+  position: relative;
+  display: inline-block;
+}
+
+.axuda-gardar:not([data-axuda=""]) {
+  cursor: not-allowed;
+}
+
+.axuda-gardar:not([data-axuda=""]):hover::after {
+  content: attr(data-axuda);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  padding: 0.4rem 0.7rem;
+  border-radius: 4px;
+  background-color: var(--text-h);
+  color: white;
+  font-size: 0.8rem;
+  white-space: nowrap;
 }
 
 .nota-obrigatorio {

@@ -14,7 +14,7 @@ export const alertaExito = (mensaje, titulo = 'Correcto') => {
 }
 
 // Alerta de error
-export const alertaError = (mensaje, titulo = 'Error') => {
+export const alertaError = (mensaje, titulo = 'Erro') => {
     return Swal.fire({
         icon: 'error',
         title: titulo,
@@ -34,7 +34,7 @@ export const alertaInfo = (mensaje, titulo = 'Información') => {
 }
 
 // Confirmación de una acción
-export const alertaConfirmacion = (mensaje, titulo = '¡Atención!') => {
+export const alertaConfirmacion = (mensaje, titulo = 'Atención!') => {
     return Swal.fire({
         icon: 'question',
         title: titulo,

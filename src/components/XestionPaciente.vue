@@ -16,13 +16,15 @@
             :aria-invalid="documentoInvalido"
             aria-describedby="dni-erro"
             :disabled="editando"
-            @focus="documentoInvalido = false"
-            @blur="validarDocumento"/>
+            @blur="validarDocumento"
+            @input="documentoInvalido && validarDocumento()"/>
+          <!-- validación: o erro aparece ao saír do campo (@blur); mentres hai erro, revalídase con cada tecla (@input)
+               e desaparece en canto o valor é correcto. O valor escrito nunca se borra -->
           <!-- :disabled="editando" → cando cargamos un paciente (✏️ ou 🔍) o DNI vese pero non se pode cambiar; 🧹 desbloquéao -->
           <!-- type="button" para que non envíe o formulario ao pulsalo -->
           <!-- 🔍 tamén se bloquea mentres editamos: co DNI bloqueado só volvería cargar o mesmo paciente -->
           <button type="button" @click="buscarPaciente" :disabled="editando" title="Buscar" aria-label="Buscar paciente por DNI">🔍</button>
-          <button type="button" @click="limpiarFormpac" title="Limpar formulario" aria-label="Limpar formulario">🧹</button>
+          <button type="button" @click="limparConConfirmacion" title="Limpar formulario" aria-label="Limpar formulario">🧹</button>
         </div>
         <div class="campo campo-apellido">
           <label for="apelido">Apelido:<span class="obrigatorio" aria-hidden="true">*</span></label>
@@ -50,8 +52,8 @@
             :class="{ 'campo-erro': correoInvalido }"
             :aria-invalid="correoInvalido"
             aria-describedby="correo-erro"
-            @focus="correoInvalido = false"
             @blur="validarCorreo"
+            @input="correoInvalido && validarCorreo()"
           />
         </div>
         <div class="campo campo-telefono">
@@ -68,8 +70,8 @@
             :class="{ 'campo-erro': telefonoIncorrecto }"
             :aria-invalid="telefonoIncorrecto"
             aria-describedby="telefono-erro"
-            @focus="telefonoIncorrecto = false"
             @blur="validarTelefono"
+            @input="telefonoIncorrecto && validarTelefono()"
           />
         </div>
       </div>
@@ -122,24 +124,24 @@
         </div>
 
         <div class="botons-gardar">
-          <button
-            type="submit"
-            class="btn-guardar"
-            :disabled="
-              novoPaciente.dnipac === '' || 
-                novoPaciente.nomepac === '' ||
-                novoPaciente.apelpac === '' ||
-                novoPaciente.movilpac === '' ||
-                !novoPaciente.lopdpac "
-          >
-            Gardar
-          </button>
+          <!-- un botón disabled non recibe eventos do rato, así que a axuda (motivoNonGardar)
+               móstrase ao pasar o rato por riba do span que o envolve -->
+          <span class="axuda-gardar" :data-axuda="motivoNonGardar">
+            <button
+              type="submit"
+              class="btn-guardar"
+              :disabled="motivoNonGardar !== ''"
+            >
+              Gardar
+            </button>
+          </span>
           <!-- Eliminar só aparece cando hai un paciente cargado no formulario (✏️ ou 🔍);
                type="button" para que non envíe o formulario (se non, tamén gardaría) -->
           <button
             v-if="editando"
             type="button"
             class="btn-eliminar"
+            :disabled="gardando"
             @click="eliminarPacienteCargado"
           >
             Eliminar
@@ -149,8 +151,23 @@
         <p class="nota-obrigatorio"><span aria-hidden="true">*</span> campo obrigatorio</p>
       </div>
     </form>
-    <h3>📋 Listaxe de pacientes</h3>
-    <table v-if="pacientes.length > 0">
+    <!-- título da listaxe co botón para xerar o PDF da listaxe (filtrada) -->
+    <div class="cabecera-listado">
+      <h3>📋 Listaxe de pacientes</h3>
+      <button
+        type="button"
+        class="btn-pdf"
+        :disabled="pacientesFiltrados.length === 0"
+        @click="exportarPacientes"
+      >
+        🖨️ PDF
+      </button>
+    </div>
+    <!-- mentres non se edita, o que se escribe no formulario filtra a táboa -->
+    <p v-if="filtroActivo" class="info-filtro">
+      Mostrando {{ pacientesFiltrados.length }} de {{ pacientes.length }} pacientes (filtrados polo formulario)
+    </p>
+    <table v-if="pacientesFiltrados.length > 0">
       <caption>Listaxe de pacientes</caption>
       <thead>
         <tr>
@@ -168,7 +185,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="(p, index) in pacientes" :key="p._id">
+        <tr v-for="(p, index) in pacientesFiltrados" :key="p._id">
           <!-- números (nº, DNI, data, teléfono) centrados; o texto queda á esquerda -->
           <td class="centrado">{{ index + 1 }}</td>
           <td class="centrado">{{ p.dnipac }}</td>
@@ -181,12 +198,14 @@
           <td>{{ p.propac }}</td>
           <td>{{ p.munipac }}</td>
           <td class="centrado">
-            <button @click="editarUsuario(index)" title="Editar" :aria-label="`Editar a ${p.nomepac} ${p.apelpac}`">✏️</button>
-            <button @click="eliminarPaciente(index)" title="Eliminar" :aria-label="`Eliminar a ${p.nomepac} ${p.apelpac}`">🗑️</button>
+            <!-- pacientes.indexOf(p): a posición na listaxe completa (co filtro, o index da fila non é o mesmo) -->
+            <button @click="editarUsuario(pacientes.indexOf(p))" title="Editar" :aria-label="`Editar a ${p.nomepac} ${p.apelpac}`">✏️</button>
+            <button @click="eliminarPaciente(pacientes.indexOf(p))" title="Eliminar" :aria-label="`Eliminar a ${p.nomepac} ${p.apelpac}`">🗑️</button>
           </td>
         </tr>
       </tbody>
     </table>
+    <p v-else-if="filtroActivo">Ningún paciente coincide co filtro.</p>
     <p v-else>Non hai pacientes cargados.</p>
   </div>
 </template>
@@ -195,7 +214,7 @@
 
 /// Zona de declaracións
 
-import { ref, reactive, onMounted } from "vue";
+import { ref, reactive, computed, onMounted } from "vue";
 import { obtenerMunicipios, obtenerProvincias } from "../api/municipios.js";
 import { 
   getPacientes, 
@@ -211,6 +230,7 @@ import {
   alertaConfirmacion, 
   alertaInfo
 } from '../utils/alertas.js'
+import { generarPDF } from "../utils/pdf.js";
 
 
 const pacientes = ref([]); //almacena la lista de pacientes e os seus cambios
@@ -221,8 +241,16 @@ const documentoInvalido = ref(false)
 const correoInvalido = ref(false)
 const telefonoIncorrecto = ref(false)
 const editando = ref(false);
+// true mentres se envía un gardado ou un borrado ao servidor: bloquea Gardar e Eliminar para non envialo dúas veces
+// (se a BD tarda en responder, un segundo clic gardaría outra vez cando volvese a conexión)
+const gardando = ref(false);
 
 const LETRAS_DNI = "TRWAGMYFPDXBNJZSQVHLCKE"
+
+// campos do formulario que se comparan para saber se hai cambios sen gardar
+const CAMPOS = ["dnipac", "nomepac", "apelpac", "nacipac", "mailpac", "movilpac", "dirpac", "propac", "munipac", "lopdpac"];
+// copia dos datos do paciente tal como se cargou (✏️ ou 🔍); null se o formulario é dun paciente novo
+const copiaOrixinal = ref(null);
 
 const novoPaciente = reactive({
   dnipac: "",
@@ -237,13 +265,59 @@ const novoPaciente = reactive({
   lopdpac: false
 });
 
+// por que non se pode gardar aínda ("" se xa se pode). Gardar desactívase mentres non estea baleiro,
+// e o texto móstrase como axuda ao pasar o rato por riba do botón
+const motivoNonGardar = computed(() => {
+  if (gardando.value) {
+    return "Gardando…";
+  }
+  if (documentoInvalido.value || correoInvalido.value || telefonoIncorrecto.value) {
+    return "Corrixe os campos marcados en vermello para gardar";
+  }
+  const falta = [];
+  if (novoPaciente.dnipac.trim() === "") falta.push("DNI/NIE");
+  if (novoPaciente.apelpac.trim() === "") falta.push("Apelido");
+  if (novoPaciente.nomepac.trim() === "") falta.push("Nome");
+  if (novoPaciente.movilpac.trim() === "") falta.push("Teléfono");
+  if (!novoPaciente.lopdpac) falta.push("aceptar a política de privacidade");
+  return falta.length ? "Para gardar falta: " + falta.join(", ") : "";
+});
+
+// campos do formulario que filtran a táboa (todos menos a casiña da política de privacidade)
+const CAMPOS_FILTRO = CAMPOS.filter((campo) => campo !== "lopdpac");
+
+// texto para comparar sen ter en conta maiúsculas nin acentos ("José" → "jose")
+function normalizar(texto) {
+  return String(texto ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+}
+
+// hai filtro se non estamos editando e hai algo escrito nalgún campo
+const filtroActivo = computed(() =>
+  !editando.value && CAMPOS_FILTRO.some((campo) => normalizar(novoPaciente[campo]) !== "")
+);
+
+// pacientes que coinciden co escrito no formulario: cada campo cuberto ten que estar contido no do paciente
+// (ao editar un paciente móstrase a listaxe completa)
+const pacientesFiltrados = computed(() => {
+  if (!filtroActivo.value) {
+    return pacientes.value;
+  }
+  return pacientes.value.filter((p) =>
+    CAMPOS_FILTRO.every((campo) => normalizar(p[campo]).includes(normalizar(novoPaciente[campo])))
+  );
+});
+
 /// Zona de ciclo de vida
 
-// ao abrir a páxina: carga as provincias e a lista de pacientes
+// ao abrir a páxina: carga as provincias e a lista de pacientes (cada unha co seu aviso se falla)
 onMounted(async() => {
-  //sempre se cargan estos pacientes de exemplo ao iniciar o componente
-  provincias.value = await obtenerProvincias(); //carga a lista de provincias desde a API
-  pacientes.value = await getPacientes();   //carga los usuarios guardados
+  try {
+    provincias.value = await obtenerProvincias(); //carga a lista de provincias desde a API
+  } catch (error) {
+    console.error("Erro ao cargar as provincias:", error);
+    alertaError("Non se puideron cargar as provincias. Contacte co administrador do sistema.");
+  }
+  await cargarPacientes();
 });
 
 // carga os municipios da provincia elixida no selector (ou baleira a lista se non hai provincia)
@@ -265,51 +339,69 @@ municipios.value = await obtenerMunicipios(provincia.id);
 
 // XXXXXXXXXXXXXXXXXXXXXX  FUNCIONES PRINCIPALES  XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
-// botón Gardar: modifica o paciente se estamos editando, o créao novo si un no existe
+// botón Gardar: modifica o paciente se estamos editando (pedindo confirmación), ou créao se é novo
 async function guardarPaciente() {
-  // validamos DNI e teléfono tamén aquí: se se preme Enter dentro dun campo, o @blur non se executa
+  // validamos DNI, correo e teléfono tamén aquí: se se preme Enter dentro dun campo, o @blur non se executa
   // e o dato sen validar chegaría á BD. Se algún non vale, mostramos o erro e non gardamos.
   validarDocumento();
+  validarCorreo();
   validarTelefono();
-  if (documentoInvalido.value || telefonoIncorrecto.value) {
+  if (documentoInvalido.value || correoInvalido.value || telefonoIncorrecto.value) {
     return;
   }
 
-  try {
-        if (editando.value){
-          const pacienteModificado = await modifyPaciente(novoPaciente.dnipac, novoPaciente);
-          const index = pacientes.value.findIndex (
-            (p) => p.dnipac === novoPaciente.dnipac
-          );
-
-          if (index !== -1){
-            pacientes.value[index] =pacienteModificado;
-          }
-          console.log("Paciente modificado correctamente")
-          alertaExito('El paciente se ha modificado correctamente');
-          
-        } else {
-          const pacienteGuardado = await savePaciente(novoPaciente);
-          pacientes.value.push(pacienteGuardado);
-          console.log("Paciente gardado correctamente");
-          alertaExito('El paciente se ha guardado correctamente');
-        }
-        limpiarFormpac();  //baleira o formulario e sae do modo edición
-        pacientes.value = await getPacientes();
-  } catch (error) {
-    console.error("Error ao gardar paciente:", error);
-    alertaError('Error al guardar paciente. Contacte con el administrador del sistema!')
+  if (editando.value) {
+    // se non se cambiou nada non hai nada que gardar
+    if (!haiCambiosSenGardar()) {
+      alertaInfo("Non hai cambios que gardar.");
+      return;
+    }
+    // pedimos confirmación; ao confirmar xa non se mostra mensaxe de éxito (evitamos dúas ventás seguidas):
+    // o usuario ve o cambio na táboa. Só se avisa se algo falla
+    const confirmacion = await alertaConfirmacion(`Seguro que queres gardar os cambios de ${novoPaciente.nomepac} ${novoPaciente.apelpac}?`);
+    if (!confirmacion.isConfirmed) {
+      return;
+    }
   }
+
+  gardando.value = true;
+  try {
+    if (editando.value) {
+      await modifyPaciente(novoPaciente.dnipac, novoPaciente);
+      console.log("Paciente modificado correctamente");
+    } else {
+      await savePaciente(novoPaciente);
+      console.log("Paciente gardado correctamente");
+      alertaExito("Paciente gardado correctamente."); // gardar un novo non pide confirmación, así que si se avisa
+    }
+    limpiarFormpac(); //baleira o formulario e sae do modo edición
+  } catch (error) {
+    console.error("Erro ao gardar paciente:", error);
+    if (error.response?.status === 409) {
+      // o backend responde 409 cando o DNI xa existe: é un erro que o usuario pode corrixir el mesmo
+      alertaError("Xa existe un paciente con este DNI/NIE.");
+    } else {
+      alertaError("Erro ao gardar o paciente. Contacte co administrador do sistema.");
+    }
+    return;
+  } finally {
+    gardando.value = false; // tanto se foi ben como se fallou, desbloqueamos
+  }
+  await cargarPacientes(); // recarga a lista (ten o seu propio aviso se falla: o paciente si se gardou)
 }
 
 // botón 🗑️: borra o paciente da BD e da táboa
 async function eliminarPaciente(index) {
+  if (gardando.value) {
+    return; // xa hai un gardado ou borrado en curso
+  }
   const p = pacientes.value[index]; // o paciente da lista 
   // pide confirmación; Swal devolve un obxecto, por iso comprobamos isConfirmed
   const confirmacion = await alertaConfirmacion(`Seguro que queres eliminar a ${p.nomepac} ${p.apelpac}?`);
   if (!confirmacion.isConfirmed) {
-    return; //si usuario cancela, no se borra nada
+    return; //se o usuario cancela, non se borra nada
   }
+  gardando.value = true;
   try {
     await deletePaciente(p.dnipac); //elimina o paciente da base de datos
     pacientes.value.splice(index, 1); //elimina o paciente da lista
@@ -317,11 +409,12 @@ async function eliminarPaciente(index) {
     if (editando.value && novoPaciente.dnipac === p.dnipac) {
       limpiarFormpac();
     }
-    console.log("Paciente eliminado correctamente");
-    alertaExito('El paciente se ha eliminado correctamente');
+    console.log("Paciente eliminado correctamente"); // sen mensaxe de éxito: xa se confirmou e a fila desaparece da táboa
   } catch (error) {
-    console.error("Error ao eliminar paciente:", error);
-    alertaError('Error al eliminar paciente. Contacte con el administrador del sistema!');
+    console.error("Erro ao eliminar paciente:", error);
+    alertaError("Erro ao eliminar o paciente. Contacte co administrador do sistema.");
+  } finally {
+    gardando.value = false;
   }
 }
 
@@ -334,14 +427,20 @@ function eliminarPacienteCargado() {
 }
 
 // botón ✏️: carga o paciente da táboa no formulario e activa o modo edición
+// (se no formulario hai datos sen gardar, pregunta antes de substituílos)
 async function editarUsuario(index){
-  const paciente=pacientes.value[index];
-  Object.assign(novoPaciente, paciente);
-  //evitar que se carge el _id n el formulasrio de MongoDB
+  if (!(await confirmarDescartar())) {
+    return;
+  }
+  limpiarFormpac(); // baleiramos antes: Object.assign deixaría os datos vellos nos campos que este paciente non teña
+  Object.assign(novoPaciente, pacientes.value[index]);
+  //evitar que se cargue o _id de MongoDB no formulario
   delete novoPaciente._id;
   editando.value = true;
   await cargarMunicipios();
+  copiaOrixinal.value = fotoFormulario(); // para saber despois se se cambiou algo
 }
+
 // botón 🧹: baleira o formulario, sae do modo edición e quita as mensaxes de erro
 const limpiarFormpac = () => {
   Object.keys(novoPaciente).forEach((key) => {
@@ -356,42 +455,106 @@ const limpiarFormpac = () => {
   correoInvalido.value = false;
   telefonoIncorrecto.value = false;
   municipios.value = []; // baleira tamén a lista de municipios da provincia anterior
+  copiaOrixinal.value = null;
 };
 
-// botón 🔍: busca o paciente polo DNI na BD e cárgao no formulario para editalo
-async function buscarPaciente() {
-  try {
-    const dni = novoPaciente.dnipac.trim();
-    if (!dni) {
-      console.log ("introduce un dni!");
-      alertaInfo("Introduce un Dni/Nie para buscar un paciente.")
-      return ;
-    }
-    const paciente= await getPacienteByDni(dni);
-    Object.assign(novoPaciente, paciente);
-    //evitar que se carge el _id de MongoDB no formulario
-    delete novoPaciente._id;
-    editando.value = true;
-    await cargarMunicipios();
-
-    console.log("Paciente encontrad", paciente);
-    alertaExito("Paciente encontrado")
-  } catch(error){
-      if (error.response?.status === 404 ){
-        // non existe: saímos do modo edición para que Gardar cree un paciente novo en vez de modificar un que non existe
-        // (co DNI e 🔍 bloqueados ao editar isto xa non debería pasar desde o formulario, pero queda como seguridade)
-        editando.value = false;
-        console.log("Paciente no encontrad");
-        alertaError("No se ha encontrado paciente con este DNI/NIE.")
-      } else {
-        console.log("Error al buscar paciente:",error)
-        alertaError("Error al buscar paciente.")
-
-      }
+// botón 🧹: se hai datos sen gardar pide confirmación antes de baleirar o formulario
+// (limpiarFormpac úsase tamén despois de gardar ou eliminar, e aí non debe preguntar)
+async function limparConConfirmacion() {
+  if (await confirmarDescartar()) {
+    limpiarFormpac();
   }
 }
 
+// botón 🔍: busca o paciente polo DNI na BD e cárgao no formulario para editalo
+async function buscarPaciente() {
+  validarDocumento();
+  if (documentoInvalido.value) {
+    return; // o DNI non é válido: o erro xa se mostra enriba de Gardar, non fai falta buscar
+  }
+  const dni = novoPaciente.dnipac.trim();
+  if (!dni) {
+    alertaInfo("Introduce un DNI/NIE para buscar un paciente.");
+    return;
+  }
+  // se se escribiron outros datos (ademais do DNI, que é o que se busca), pregunta antes de substituílos
+  if (!(await confirmarDescartar(true))) {
+    return;
+  }
+  try {
+    const paciente = await getPacienteByDni(dni);
+    limpiarFormpac(); // baleiramos antes: Object.assign deixaría os datos vellos nos campos que este paciente non teña
+    Object.assign(novoPaciente, paciente);
+    //evitar que se cargue o _id de MongoDB no formulario
+    delete novoPaciente._id;
+    editando.value = true;
+    await cargarMunicipios();
+    copiaOrixinal.value = fotoFormulario();
+    console.log("Paciente atopado", paciente); // sen mensaxe: os datos aparecen no formulario
+  } catch(error){
+    if (error.response?.status === 404 ){
+      // non existe: saímos do modo edición para que Gardar cree un paciente novo en vez de modificar un que non existe
+      // (co DNI e 🔍 bloqueados ao editar isto xa non debería pasar desde o formulario, pero queda como seguridade)
+      editando.value = false;
+      alertaError("Non se atopou ningún paciente con este DNI/NIE.");
+    } else {
+      console.error("Erro ao buscar paciente:", error);
+      alertaError("Erro ao buscar o paciente. Contacte co administrador do sistema.");
+    }
+  }
+}
+
+// botón 🖨️ PDF: abre nunha pestana nova a listaxe que se ve na táboa (filtrada se hai filtro).
+// Só DNI, apelido, nome e teléfono: son datos persoais, exportamos só o necesario
+function exportarPacientes() {
+  const total = pacientesFiltrados.value.length;
+  generarPDF(
+    "Listaxe de pacientes",
+    ["DNI/NIE", "Apelido", "Nome", "Teléfono"],
+    pacientesFiltrados.value.map((p) => [p.dnipac, p.apelpac, p.nomepac, p.movilpac]),
+    `${total} ${total === 1 ? "paciente" : "pacientes"}` + (filtroActivo.value ? " (listaxe filtrada)" : "")
+  );
+}
+
 // XXXXXXXXXXXXXXXXXXXXXX  FUNCIONES AUXILIARES  XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+
+// carga a lista de pacientes da BD; se falla (backend ou MongoDB caídos) avisa en vez de deixar a táboa baleira sen máis
+async function cargarPacientes() {
+  try {
+    pacientes.value = await getPacientes();
+  } catch (error) {
+    console.error("Erro ao cargar os pacientes:", error);
+    alertaError("Non se puido cargar a lista de pacientes. Contacte co administrador do sistema.");
+  }
+}
+
+// "foto" dos datos do formulario como texto, para comparar o estado actual co do paciente cargado
+function fotoFormulario() {
+  return JSON.stringify(CAMPOS.map((campo) => novoPaciente[campo] ?? ""));
+}
+
+// hai datos no formulario que se perderían?
+// - paciente cargado (✏️/🔍): se algo cambiou desde que se cargou
+// - paciente novo: se se escribiu algo (a casiña da política non conta; o DNI tampouco se ignorarDni, para 🔍)
+function haiCambiosSenGardar(ignorarDni = false) {
+  if (copiaOrixinal.value !== null) {
+    return fotoFormulario() !== copiaOrixinal.value;
+  }
+  return CAMPOS.some((campo) =>
+    campo !== "lopdpac" &&
+    !(ignorarDni && campo === "dnipac") &&
+    String(novoPaciente[campo] ?? "").trim() !== ""
+  );
+}
+
+// se hai datos sen gardar, pregunta se se descartan. Devolve true se se pode continuar
+async function confirmarDescartar(ignorarDni = false) {
+  if (!haiCambiosSenGardar(ignorarDni)) {
+    return true;
+  }
+  const confirmacion = await alertaConfirmacion("Hai datos sen gardar que se perderán. Queres descartalos?");
+  return confirmacion.isConfirmed;
+}
 
 // comproba que un DNI (8 números + letra) ten a letra correcta
 function validarDNI(valor) {
@@ -408,42 +571,40 @@ function validarNIE(valor) {
   return valor.charAt(8) === LETRAS_DNI[numero % 23]
 }
 
-// ao saír do campo DNI: valida DNI/NIE, mostra o erro e baleira o campo se non vale
+// valida o DNI/NIE (campo obrigatorio). Non borra o que escribiu o usuario: só marca o erro.
+// Se está baleiro non cambia nada: un campo sen tocar non se marca, e un erro xa visible
+// mantense ata que se escriba un DNI/NIE correcto
 function validarDocumento() {
   const valor = novoPaciente.dnipac.trim().toUpperCase()
-  const esValido = validarDNI(valor) || validarNIE(valor)
-
-  documentoInvalido.value = valor !== "" && !esValido
-
-  if (esValido) {
-    novoPaciente.dnipac = valor
-  } else {
-    novoPaciente.dnipac = ""
+  if (valor === "") {
+    return
   }
-  
+  documentoInvalido.value = !(validarDNI(valor) || validarNIE(valor))
+  if (!documentoInvalido.value) {
+    novoPaciente.dnipac = valor // se é correcto gardámolo normalizado (en maiúsculas e sen espazos)
+  }
 }
 
-// ao saír do campo Correo: valida o formato e baleira o campo se non vale
+// valida o correo (campo opcional). Non borra o que escribiu o usuario: só marca o erro.
+// O erro quítase cando o correo é correcto ou cando se deixa baleiro (é opcional)
 function validarCorreo() {
   const valor = novoPaciente.mailpac.trim().toLowerCase()
   correoInvalido.value = valor !== "" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valor)
-
-  if (correoInvalido.value) {
-    novoPaciente.mailpac = ""
-  } else {
-    novoPaciente.mailpac = valor
+  if (!correoInvalido.value) {
+    novoPaciente.mailpac = valor // se é correcto gardámolo normalizado (en minúsculas e sen espazos)
   }
 }
 
-// ao saír do campo Teléfono: valida que sexa un móbil de 9 cifras (6 ou 7 ao principio)
+// valida o teléfono (campo obrigatorio): móbil de 9 cifras que empeza por 6 ou 7.
+// Igual que o DNI: non borra o valor, e un erro xa visible mantense ata que o número sexa correcto
 function validarTelefono() {
   const valor = novoPaciente.movilpac.trim()
-  telefonoIncorrecto.value = valor !== "" && !/^[67]\d{8}$/.test(valor)
-  
-  if (telefonoIncorrecto.value) {
-    novoPaciente.movilpac = ""
-  } else {
-    novoPaciente.movilpac = valor
+  if (valor === "") {
+    return
+  }
+  telefonoIncorrecto.value = !/^[67]\d{8}$/.test(valor)
+  if (!telefonoIncorrecto.value) {
+    novoPaciente.movilpac = valor // se é correcto gardámolo sen espazos
   }
 }
 
@@ -476,6 +637,42 @@ h3 {
   background-color: var(--heading-bg);
   color: var(--text-h); /* texto escuro: o branco sobre este verde só tiña contraste 2:1 */
   text-align: center;
+}
+
+/* título da listaxe co botón do PDF ao lado */
+.cabecera-listado {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.cabecera-listado h3 {
+  flex: 1;
+  margin: 0;
+}
+
+.btn-pdf {
+  background-color: var(--accent);
+  color: white;
+  border: none;
+  padding: 0.4rem 1rem;
+  cursor: pointer;
+}
+
+.btn-pdf:hover:enabled {
+  background-color: var(--accent-dark);
+}
+
+.btn-pdf:disabled {
+  background-color: #e0e0e0;
+  color: #999;
+  cursor: not-allowed;
+}
+
+.info-filtro {
+  font-size: 0.85rem;
+  font-style: italic;
 }
 
 /* ---------- formulario ---------- */
@@ -651,15 +848,45 @@ input.campo-erro {
   cursor: pointer;
 }
 
-.btn-eliminar:hover {
+.btn-eliminar:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.btn-eliminar:hover:enabled {
   background-color: #9a3b3b;
 }
 
 .btn-guardar:disabled {
   background-color: #e0e0e0;
   color: #999;
-  cursor: not-allowed;
   opacity: 0.7;
+  pointer-events: none; /* o rato "atravesa" o botón desactivado e chega ao span, que mostra a axuda */
+}
+
+/* axuda de Gardar: caixa escura enriba do botón, só cando hai motivo (data-axuda non baleiro) */
+.axuda-gardar {
+  position: relative;
+  display: inline-block;
+}
+
+.axuda-gardar:not([data-axuda=""]) {
+  cursor: not-allowed;
+}
+
+.axuda-gardar:not([data-axuda=""]):hover::after {
+  content: attr(data-axuda);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  padding: 0.4rem 0.7rem;
+  border-radius: 4px;
+  background-color: var(--text-h);
+  color: white;
+  font-size: 0.8rem;
+  white-space: nowrap;
 }
 
 .nota-obrigatorio {

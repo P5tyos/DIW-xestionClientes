@@ -43,17 +43,24 @@ npx eslint src           # lint (flat config in eslint.config.js); expect many f
 | API | `/api/pacientes/:dni` (GET/PUT/DELETE) | `/api/doctores/:id` (PUT/DELETE), `findById…` |
 | On load into form (✏️/🔍) | `delete novoPaciente._id` | **keep** `_id`; it is what `modifyDoctor` uses |
 | On clear (`limpiarForm…`) | fields reset to `""`/`false` | also `delete novoDoctor._id` (an `_id: ""` breaks the next POST) |
-| Create | POST checks the DNI and returns 409 if it already exists | no duplicate check |
+| Create | POST checks the DNI and returns 409 if it already exists | POST/PUT return 409 only if **every** field equals another doctor's (`datosDoctor`; PUT excludes itself with `_id: { $ne }`) |
 
 - PUT routes `delete req.body.dnipac`/`_id` so the identifier can't be changed through the body; the form also disables the DNI field (`:disabled="editando"`) while editing.
 - The old unique index `iddoc_1` was dropped from `doctores` when doctors switched to `_id`. Removing a `unique` field from a schema does **not** drop its index; drop it manually or every save fails with E11000 on `null`.
 
-### Form behaviour to preserve (patients; mirror on doctors)
-- `guardarPaciente` re-runs `validarDocumento()`/`validarTelefono()` before saving, because pressing Enter submits without firing `@blur`.
+### Form behaviour to preserve (both pages mirror each other; doctors have no 🔍, the filter replaces it)
+- Field validation ("punish late, reward early"): the error appears on `@blur`; while it is shown, `@input` re-validates so it disappears as soon as the value is correct. **Never erase the user's value**; only normalise it (upper case, trim) once it is valid. Required fields (DNI, phone): an empty value doesn't change the flag (untouched fields aren't marked, a visible error persists until fixed). Optional fields (email): empty clears the error. Error messages sit together above Gardar (`.erros`), each with a valid example, and keep their `id` for the inputs' `aria-describedby`. Gardar is disabled while the computed `motivoNonGardar` is non-empty (errors shown, or missing required fields / privacy checkbox); that text is shown as a hover hint via the wrapping `span.axuda-gardar` (a disabled button gets no mouse events, so it has `pointer-events: none`).
+- `guardarPaciente` re-runs `validarDocumento()`/`validarCorreo()`/`validarTelefono()` before saving, because pressing Enter submits without firing `@blur`. 🔍 also validates the DNI before searching.
 - On success it calls `limpiarFormpac()`; on error the form keeps its data.
 - Changing province resets `munipac` in the `@change` (not inside `cargarMunicipios`, which ✏️/🔍 also call and must keep the saved municipality).
 - 🔍 is disabled while editing; a 404 on search sets `editando = false`.
 - The "Eliminar" button next to Gardar only shows when `editando`. Deleting the patient loaded in the form clears it.
+- Alerts (SweetAlert, texts in Galician): an action that first asks "Seguro que…?" (delete, modify) shows **no success message** afterwards, only an error if it fails; creating a new patient (no question) shows success. Loading a record (✏️/🔍) shows no popup. Backend 409 → specific "Xa existe…" message. Failing to load the list (`cargarPacientes`) or provinces shows an error.
+- Unsaved data: `copiaOrixinal` holds a snapshot (`fotoFormulario()`) of the loaded patient; `haiCambiosSenGardar()` compares against it (or, for a new form, checks for any typed field except the privacy checkbox). 🧹 (`limparConConfirmacion`), ✏️ and 🔍 call `confirmarDescartar()` first; 🔍 ignores the DNI itself. Gardar on an unchanged loaded patient shows "Non hai cambios que gardar". `limpiarFormpac()` itself never asks (it's also used after save/delete). Leaving the page with unsaved data is not guarded.
+- Filter: while not `editando`, the form doubles as a filter. `pacientesFiltrados` keeps patients where every filled `CAMPOS_FILTRO` field is *contained* in theirs, ignoring case and accents (`normalizar`). The table iterates `pacientesFiltrados`, so row actions must use `pacientes.indexOf(p)`, not the row `index`. Known side effects: typed filter text counts as unsaved data (✏️/🧹 ask), and partial DNI/phone get marked invalid on blur.
+- PDF: `utils/pdf.js` `generarPDF(titulo, cabeceiras, filas, subtitulo)` (jsPDF + jspdf-autotable, palette green header) opens the PDF in a new tab via `window.open(doc.output("bloburl"))` (must run inside the click handler or popup blockers interfere; the tab has no real filename). Patients export only DNI, Apelido, Nome, Teléfono (privacy) of the filtered list.
+- `gardando` locks Gardar/Eliminar while a save or delete request is in progress (prevents double submissions when the DB is slow or reconnecting); `motivoNonGardar` then reads "Gardando…".
+- Doctors: `coledoc` starts as `null` (no radio checked) so Colexiado must be chosen and an empty value doesn't filter; `limpiarFormdoc` resets it to `null` and deletes every non-`CAMPOS` key (`_id`, `__v`). The doctors PDF leaves out the MongoDB `_id`.
 - `Object.assign(form, record)` leaves extra keys (`_id`, `__v`) and keeps old values for keys the record doesn't have. Account for that when loading or clearing.
 
 ## Styling conventions
