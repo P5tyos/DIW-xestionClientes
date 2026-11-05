@@ -1,10 +1,11 @@
-import express from 'express'
-import fs from 'fs'
-import cors from 'cors'
+import express from 'express';
+import fs from 'fs';
+import cors from 'cors';
 import "dotenv/config";
-import mongoose from "mongoose"
+import mongoose from "mongoose";
 import pacientesRutas from './rutas/pacientes.rutas.js';
-import doctoresRutas from './rutas/doctores.rutas.js'
+import doctoresRutas from './rutas/doctores.rutas.js';
+import citasRutas from './rutas/citas.rutas.js';
 
 //creamos la aplicación de express
 const app = express()
@@ -12,6 +13,7 @@ app.use(cors());
 app.use(express.json());
 app.use('/api/pacientes', pacientesRutas);
 app.use('/api/doctores', doctoresRutas);
+app.use('/api/citas', citasRutas);
 
 
 //usa el port devinido en las variables del entorno y si no coge el 3000
