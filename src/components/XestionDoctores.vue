@@ -203,6 +203,7 @@ import {
   alertaInfo
 } from "../utils/alertas.js";
 import { generarPDF } from "../utils/pdf.js";
+import { useDoctorStore } from "../store/doctorStore.js";
 
 const doctores = ref([]); //lista de doctores da BD
 const especialidades = ref([]); //lista de especialidades para o select
@@ -210,6 +211,9 @@ const especialidades = ref([]); //lista de especialidades para o select
 const editando = ref(false);
 // true mentres se envía un gardado ou un borrado ao servidor: bloquea Gardar e Eliminar para non envialo dúas veces
 const gardando = ref(false);
+
+// store de Pinia: garda o doctor seleccionado para que a páxina de Citas o use
+const doctorStore = useDoctorStore();
 const correoInvalido = ref(false);
 const telefonoIncorrecto = ref(false);
 
@@ -316,9 +320,12 @@ async function guardarDoctor() {
   try {
     if (editando.value) {
       await modifyDoctor(novoDoctor._id, novoDoctor); // identificamos o doctor polo _id de MongoDB
+      doctorStore.seleccionarDoctor(novoDoctor); // queda seleccionado para Citas
       console.log("Doctor modificado correctamente");
     } else {
-      await saveDoctor(novoDoctor);
+      // un doctor novo aínda non ten _id: collémolo da resposta do servidor
+      const doctorGardado = await saveDoctor(novoDoctor);
+      doctorStore.seleccionarDoctor(doctorGardado); // queda seleccionado para Citas
       console.log("Doctor gardado correctamente");
       alertaExito("Doctor gardado correctamente."); // gardar un novo non pide confirmación, así que si se avisa
     }
@@ -357,6 +364,10 @@ async function eliminarDoctor(index) {
     if (editando.value && novoDoctor._id === d._id) {
       limpiarFormdoc();
     }
+    // se era o doctor seleccionado para Citas, deselecciónase (xa non existe)
+    if (doctorStore._id === d._id) {
+      doctorStore.limpiarDoctor();
+    }
     console.log("Doctor eliminado correctamente"); // sen mensaxe de éxito: xa se confirmou e a fila desaparece
   } catch (error) {
     console.error("Erro ao eliminar doctor:", error);
@@ -386,6 +397,7 @@ async function editarDoctor(index) {
   Object.assign(novoDoctor, doctores.value[index]);
   editando.value = true;
   copiaOrixinal.value = fotoFormulario(); // para saber despois se se cambiou algo
+  doctorStore.seleccionarDoctor(novoDoctor); // o doctor cargado queda seleccionado para Citas
 }
 
 // baleira o formulario, sae do modo edición e quita as mensaxes de erro (non pregunta: úsase tamén despois de gardar/eliminar)
@@ -407,6 +419,7 @@ function limpiarFormdoc() {
 async function limparConConfirmacion() {
   if (await confirmarDescartar()) {
     limpiarFormdoc();
+    doctorStore.limpiarDoctor(); // 🧹 tamén deselecciona o doctor para Citas
   }
 }
 

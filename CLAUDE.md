@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-"Sanidad Teis": a class project (DIW, a front-end module) for a health centre. Vue 3 + Vite SPA with a small Express + Mongoose backend in the same repo. Two management pages do CRUD: patients (`XestionPaciente.vue`) and doctors (`XestionDoctores.vue`). The student follows the teacher's pace, so keep changes scoped to what is asked and explain them; the user often wants the reasoning, not only the fix.
+"Sanidad Teis": a class project (DIW, a front-end module) for a health centre. Vue 3 + Vite SPA with a small Express + Mongoose backend in the same repo. Management pages: patients (`XestionPaciente.vue`), doctors (`XestionDoctores.vue`) and appointments (`XestionCitas.vue`, model `Cita.js`, routes `/api/citas`; POST checks the patient's DNI exists → 404). The student follows the teacher's pace, so keep changes scoped to what is asked and explain them; the user often wants the reasoning, not only the fix.
 
 **Language:** the UI text and code comments are in **Galician** (e.g. "Gardar", "Limpar", `// baleira o formulario`). Write new comments in Galician to match. Some older comments and alert texts are in Spanish.
 
@@ -29,6 +29,8 @@ npx eslint src           # lint (flat config in eslint.config.js); expect many f
 - `router/index.js`: one route per page component in `src/components/` (no `views/` folder). The catch-all `NotFound` route goes last.
 - `api/*.js`: one axios module per resource. The base URL `http://localhost:3000/api` is hard-coded in each file (not read from `.env`). `getPacientes`/`getDoctores` sort by surname (`localeCompare`, "es") on the client.
 - `utils/alertas.js`: SweetAlert2 helpers (`alertaExito`, `alertaError`, `alertaInfo`, `alertaConfirmacion`). `alertaConfirmacion` resolves to a Swal **result object**, so check `.isConfirmed`, never the object itself (an object is always truthy, so Cancel would still delete).
+- `store/` (Pinia, registered in `main.js`): `pacienteStore.js` (`usePacienteStore`: `dnipac`, `nomepac`, `apelpac`) and `doctorStore.js` (`useDoctorStore`: `_id`, `nomedoc`, `apeldoc`, `espedoc`) hold the patient/doctor **selected** on their pages for use in Citas. Loading (✏️/🔍) or saving selects; 🧹 on that page or deleting the selected record clears it. A new doctor's `_id` is taken from `saveDoctor`'s response. Pinia state is lost on a full page reload (F5). Note the folder is `store/` (singular).
+- `XestionCitas.vue`: patient (DNI) and doctor (`_id`) come only from the stores (read-only fields showing names); the list shows only the selected patient's citas (`citasPaciente`), with a hint when none is selected. 🧹 there clears both stores. Citas can be created and listed; editing/deleting citas is not implemented yet.
 - Management pages follow the same structure: a `reactive` form object (`novoPaciente` / `novoDoctor`), an `editando` ref, validation-flag refs, and functions grouped under comment headers ("Zona de declaracións", "ciclo de vida", "métodos", "funcións auxiliares"), each with a one-line comment.
 
 **Backend (`backend/`)**
@@ -41,6 +43,7 @@ npx eslint src           # lint (flat config in eslint.config.js); expect many f
 |---|---|---|
 | Key | `dnipac` (DNI/NIE) | MongoDB `_id` |
 | API | `/api/pacientes/:dni` (GET/PUT/DELETE) | `/api/doctores/:id` (PUT/DELETE), `findById…` |
+| Citas link | `cita.dnipac` (plain String, no `ref`) | `cita.doctorId` (`ObjectId`, `ref: "Doctor"`, populated in `GET /api/citas`) |
 | On load into form (✏️/🔍) | `delete novoPaciente._id` | **keep** `_id`; it is what `modifyDoctor` uses |
 | On clear (`limpiarForm…`) | fields reset to `""`/`false` | also `delete novoDoctor._id` (an `_id: ""` breaks the next POST) |
 | Create | POST checks the DNI and returns 409 if it already exists | POST/PUT return 409 only if **every** field equals another doctor's (`datosDoctor`; PUT excludes itself with `_id: { $ne }`) |
@@ -69,4 +72,5 @@ npx eslint src           # lint (flat config in eslint.config.js); expect many f
 - Component styles are `scoped`. `#app` centres text globally, so each page panel sets `text-align: left`.
 - Form rows are flex: `.campo { flex: 1; min-width: 0 }`. Fixed-format fields (DNI, ID, phone, date, selects, radio fieldset) get `flex: 0 0 auto` plus a fixed `width` in `em`; text fields share the rest. Select widths were measured for their longest option (`#municipio` intentionally fits ~99% of names).
 - Rule order matters for same-specificity overrides (e.g. `.campo-id label` must come after `.campo label`).
+- Inicio hero has a decorative background video (`public/video/inicio.webm` + `.mp4` + poster, ~1–1.4 MB, 1280×720, 18 s loop, no audio; sources and license in `public/video/CREDITOS.txt`). It starts from the script (no `autoplay` attribute) only if `prefers-reduced-motion` is not set, has a ⏸/▶ button (WCAG 2.2.2), `preload="none"`, `aria-hidden`, and a dark overlay (`.hero::before`) so the white text keeps ≥4.5:1 contrast. Self-hosted on purpose (a YouTube embed would need cookie consent).
 - Tailwind is planned. Its Preflight reset will change defaults (headings, buttons, lists) on existing pages.

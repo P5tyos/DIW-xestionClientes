@@ -231,7 +231,7 @@ import {
   alertaInfo
 } from '../utils/alertas.js'
 import { generarPDF } from "../utils/pdf.js";
-
+import { usePacienteStore } from "../store/pacienteStore.js";
 
 const pacientes = ref([]); //almacena la lista de pacientes e os seus cambios
 const provincias = ref([]); //almacena a lista de provincias e os seus cambios
@@ -244,6 +244,9 @@ const editando = ref(false);
 // true mentres se envía un gardado ou un borrado ao servidor: bloquea Gardar e Eliminar para non envialo dúas veces
 // (se a BD tarda en responder, un segundo clic gardaría outra vez cando volvese a conexión)
 const gardando = ref(false);
+
+// store de Pinia: garda o paciente seleccionado para que a páxina de Citas saiba de quen son as citas
+const pacienteStore = usePacienteStore();
 
 const LETRAS_DNI = "TRWAGMYFPDXBNJZSQVHLCKE"
 
@@ -374,6 +377,7 @@ async function guardarPaciente() {
       console.log("Paciente gardado correctamente");
       alertaExito("Paciente gardado correctamente."); // gardar un novo non pide confirmación, así que si se avisa
     }
+    seleccionarPaciente(novoPaciente); // antes de baleirar o formulario (despois xa non quedarían datos)
     limpiarFormpac(); //baleira o formulario e sae do modo edición
   } catch (error) {
     console.error("Erro ao gardar paciente:", error);
@@ -409,6 +413,10 @@ async function eliminarPaciente(index) {
     if (editando.value && novoPaciente.dnipac === p.dnipac) {
       limpiarFormpac();
     }
+    // se era o paciente seleccionado para Citas, deselecciónase (xa non existe)
+    if (pacienteStore.dnipac === p.dnipac) {
+      pacienteStore.limpiarPaciente();
+    }
     console.log("Paciente eliminado correctamente"); // sen mensaxe de éxito: xa se confirmou e a fila desaparece da táboa
   } catch (error) {
     console.error("Erro ao eliminar paciente:", error);
@@ -439,6 +447,7 @@ async function editarUsuario(index){
   editando.value = true;
   await cargarMunicipios();
   copiaOrixinal.value = fotoFormulario(); // para saber despois se se cambiou algo
+  seleccionarPaciente(novoPaciente); // o paciente que se acaba de cargar no formulario
 }
 
 // botón 🧹: baleira o formulario, sae do modo edición e quita as mensaxes de erro
@@ -463,6 +472,7 @@ const limpiarFormpac = () => {
 async function limparConConfirmacion() {
   if (await confirmarDescartar()) {
     limpiarFormpac();
+    pacienteStore.limpiarPaciente(); // 🧹 tamén deselecciona o paciente para Citas
   }
 }
 
@@ -490,6 +500,7 @@ async function buscarPaciente() {
     editando.value = true;
     await cargarMunicipios();
     copiaOrixinal.value = fotoFormulario();
+    seleccionarPaciente(paciente);
     console.log("Paciente atopado", paciente); // sen mensaxe: os datos aparecen no formulario
   } catch(error){
     if (error.response?.status === 404 ){
@@ -514,6 +525,11 @@ function exportarPacientes() {
     pacientesFiltrados.value.map((p) => [p.dnipac, p.apelpac, p.nomepac, p.movilpac]),
     `${total} ${total === 1 ? "paciente" : "pacientes"}` + (filtroActivo.value ? " (listaxe filtrada)" : "")
   );
+}
+
+// garda no store o paciente (DNI, nome e apelido) para usalo en Citas
+function seleccionarPaciente(paciente) {
+  pacienteStore.seleccionarPaciente(paciente);
 }
 
 // XXXXXXXXXXXXXXXXXXXXXX  FUNCIONES AUXILIARES  XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX

@@ -1,13 +1,51 @@
 <template>
   <div class="inicio">
     <section class="hero">
-      <h1>Bienvenido a Sanidad Teis</h1>
-      <p class="subtitulo">Tu centro de salud de confianza en el barrio de Teis</p>
-      <p>
-        En Sanidad Teis ofrecemos atención médica cercana, profesional y accesible
-        para toda la familia. Contamos con un equipo comprometido con tu bienestar
-        y con las últimas herramientas digitales para facilitar la gestión de tus
-        datos y citas.
+      <!-- vídeo de fondo decorativo: sen son, en bucle; aria-hidden porque non transmite información.
+           Sen "autoplay": arráncase desde o script só se o usuario non pediu "movemento reducido".
+           preload="none": a quen non o reproduce non se lle descarga, só ve o póster -->
+      <video
+        ref="video"
+        class="hero-video"
+        muted
+        loop
+        playsinline
+        preload="none"
+        poster="/video/inicio-poster.jpg"
+        aria-hidden="true"
+        tabindex="-1"
+      >
+        <!-- o navegador colle o primeiro formato que saiba reproducir (WebM pesa menos) -->
+        <source src="/video/inicio.webm" type="video/webm" />
+        <source src="/video/inicio.mp4" type="video/mp4" />
+      </video>
+
+      <div class="hero-contido">
+        <h1>Bienvenido a Sanidad Teis</h1>
+        <p class="subtitulo">Tu centro de salud de confianza en el barrio de Teis</p>
+        <p>
+          En Sanidad Teis ofrecemos atención médica cercana, profesional y accesible
+          para toda la familia. Contamos con un equipo comprometido con tu bienestar
+          y con las últimas herramientas digitales para facilitar la gestión de tus
+          datos y citas.
+        </p>
+      </div>
+
+      <!-- botón para parar/continuar o vídeo (WCAG 2.2.2: o que se move máis de 5 s ten que poder pararse) -->
+      <button
+        type="button"
+        class="boton-video"
+        :aria-label="enPausa ? 'Reproducir o vídeo de fondo' : 'Pausar o vídeo de fondo'"
+        :title="enPausa ? 'Reproducir vídeo' : 'Pausar vídeo'"
+        @click="alternarVideo"
+      >
+        {{ enPausa ? "▶" : "⏸" }}
+      </button>
+
+      <!-- crédito do vídeo (licenza Pexels: non obrigatorio, pero boa práctica). Detalles en public/video/CREDITOS.txt -->
+      <p class="credito-video">
+        Vídeo: <a href="https://www.pexels.com/es-es/@mikhail-nilov/" target="_blank" rel="noopener noreferrer">Mikhail Nilov</a>
+        e outros autores de <a href="https://www.pexels.com" target="_blank" rel="noopener noreferrer">Pexels</a>
       </p>
     </section>
 
@@ -42,7 +80,36 @@
 </template>
 
 <script setup>
+import { ref, onMounted } from "vue";
 
+const video = ref(null);   // o elemento <video> do hero
+const enPausa = ref(true); // empeza parado ata que se arranca (ou non) en onMounted
+
+// ao abrir a páxina: o vídeo só se reproduce se o usuario non pediu "movemento reducido" no seu sistema
+onMounted(() => {
+  const movementoReducido = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (!movementoReducido) {
+    reproducir();
+  }
+});
+
+// arranca o vídeo (sempre sen son: os navegadores só permiten reproducir sós os vídeos mudos)
+function reproducir() {
+  video.value.muted = true;
+  video.value.play()
+    .then(() => { enPausa.value = false; })
+    .catch(() => { enPausa.value = true; }); // se o navegador o bloquea, quédase o póster e o botón ▶
+}
+
+// botón ⏸/▶: para ou continúa o vídeo
+function alternarVideo() {
+  if (video.value.paused) {
+    reproducir();
+  } else {
+    video.value.pause();
+    enPausa.value = true;
+  }
+}
 </script>
 
 <style scoped>
@@ -53,20 +120,43 @@
   box-sizing: border-box;
 }
 
+/* hero co vídeo de fondo: as capas (de abaixo arriba) son vídeo → capa escura → texto e botóns */
 .hero {
+  position: relative;
+  isolation: isolate; /* os z-index negativos do vídeo e da capa quedan dentro do hero */
+  overflow: hidden;   /* o vídeo non sae das esquinas redondeadas */
   max-width: 760px;
   margin: 0 auto 2.5rem;
   padding: clamp(1.75rem, 4vw, 3.5rem);
+  padding-bottom: clamp(3rem, 6vw, 4.5rem); /* sitio para o crédito e o botón de abaixo */
   text-align: center;
-  background: var(--surface);
-  border: 1px solid var(--border);
+  color: white;
+  background: var(--text-h); /* cor de reserva mentres non hai póster/vídeo */
   border-radius: 18px;
   box-shadow: var(--shadow);
 }
 
+.hero-video {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* enche o hero sen deformarse (recorta o que sobra) */
+}
+
+/* capa verde escura semitransparente: o texto branco ten contraste suficiente (≥ 4.5:1) mesmo sobre as partes máis claras do vídeo */
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: rgba(20, 45, 33, 0.72);
+}
+
 .hero h1 {
   margin: 0 0 1rem;
-  color: var(--text-h);
+  color: white;
   font-size: clamp(2.1rem, 5vw, 3.8rem);
   line-height: 1.08;
 }
@@ -77,9 +167,49 @@
 
 .hero .subtitulo {
   margin-bottom: 1rem;
-  color: var(--accent-dark);
+  color: var(--accent-light);
   font-size: 1.15rem;
   font-weight: 600;
+}
+
+/* botón ⏸/▶: redondo, abaixo á dereita */
+.boton-video {
+  position: absolute;
+  right: 0.8rem;
+  bottom: 0.8rem;
+  width: 2.4rem;
+  height: 2.4rem;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.45);
+  color: white;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.boton-video:hover {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.boton-video:focus-visible {
+  outline: 3px solid var(--accent-light);
+  outline-offset: 2px;
+}
+
+/* crédito do vídeo: pequeno, abaixo á esquerda */
+.credito-video {
+  position: absolute;
+  left: 1rem;
+  bottom: 0.9rem;
+  margin: 0;
+  font-size: 0.7rem;
+  line-height: 1.3;
+  text-align: left;
+  opacity: 0.9;
+}
+
+.credito-video a {
+  color: white;
 }
 
 .accesos-rapidos {

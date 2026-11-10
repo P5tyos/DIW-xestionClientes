@@ -1,0 +1,15 @@
+Vídeo de fondo da páxina de Inicio (inicio.mp4 / inicio.webm / inicio-poster.jpg)
+
+Montaxe de 6 clips (3,5 s de cada un, con transicións fundidas), sen son, 1280x720.
+Os clips verticais (3-6) colócanse no centro cunha copia desenfocada nos lados.
+
+Orixe: Pexels (https://www.pexels.com) - Licenza Pexels
+  https://www.pexels.com/es-es/license/
+  Uso gratuíto, tamén comercial; non require atribución (dámola igualmente como boa práctica).
+  Non se permite vender os vídeos sen modificar nin usar as persoas que aparecen de forma ofensiva ou enganosa.
+
+Autores:
+  - Mikhail Nilov - https://www.pexels.com/es-es/@mikhail-nilov/
+  - (completar autores e URL do resto de clips se se coñecen)
+
+Descargado: novembro 2026
