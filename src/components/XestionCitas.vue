@@ -2,15 +2,56 @@
   <div class="xestion-citas">
     <h3>📅 Xestión de citas</h3>
     <form @submit.prevent="guardarCita">
-      <!-- fila 1: ID da cita, data e hora -->
+      <!-- fila 1: ID da cita, DNI do paciente, nome do doctor, ID do doctor e 🧹 (ningún se escribe) -->
       <div class="fila">
         <div class="campo campo-id">
-          <label for="id">ID:</label>
+          <label for="id">ID cita:</label>
           <!-- o _id que xera MongoDB: non se edita -->
           <input id="id" v-model="novaCita._id" type="text" disabled class="centrado" />
-          <!-- 🧹 baleira o formulario e deselecciona paciente e doutor -->
+        </div>
+        <!-- DNI e ID non se escriben: son ligazóns que abren Pacientes / Doctores, onde o seleccionado aparece cargado
+             no formulario (alí se escolle ou se cambia). Sen ninguén seleccionado mostran "—".
+             Unha <label for> non pode apuntar a unha ligazón, por iso a etiqueta vai con aria-labelledby -->
+        <div class="campo campo-dni">
+          <span id="etiqueta-paciente" class="etiqueta">DNI paciente:<span class="obrigatorio" aria-hidden="true">*</span></span>
+          <RouterLink
+            to="/xestion-pacientes"
+            class="campo-ligazon centrado"
+            aria-labelledby="etiqueta-paciente"
+            :title="pacienteStore.dnipac ? `Abrir en Pacientes (${pacienteStore.nomepac} ${pacienteStore.apelpac})` : 'Seleccionar un paciente en Pacientes'"
+          >
+            {{ pacienteStore.dnipac || "—" }}
+          </RouterLink>
+        </div>
+        <div class="campo campo-nome-doctor">
+          <label for="nome-doctor">Doctor:</label>
+          <!-- nome do doctor seleccionado (store), antes do seu ID; só se mostra, non se edita -->
+          <input
+            id="nome-doctor"
+            :value="doctorStore._id ? `${doctorStore.nomedoc} ${doctorStore.apeldoc}` : ''"
+            type="text"
+            placeholder="—"
+            disabled
+          />
+        </div>
+        <div class="campo campo-doctor">
+          <span id="etiqueta-doctor" class="etiqueta">ID doctor:<span class="obrigatorio" aria-hidden="true">*</span></span>
+          <RouterLink
+            to="/xestion-doctores"
+            class="campo-ligazon centrado"
+            aria-labelledby="etiqueta-doctor"
+            :title="doctorStore._id ? `Abrir en Doctores (${doctorStore.nomedoc} ${doctorStore.apeldoc})` : 'Seleccionar un doctor en Doctores'"
+          >
+            {{ doctorStore._id || "—" }}
+          </RouterLink>
+        </div>
+        <div class="campo campo-limpar">
+          <!-- 🧹 baleira o formulario e deselecciona paciente e doctor -->
           <button type="button" title="Limpar formulario" aria-label="Limpar formulario" @click="limpiarFormCita">🧹</button>
         </div>
+      </div>
+      <!-- fila 2: data, hora, motivo e estado -->
+      <div class="fila">
         <div class="campo campo-fixo">
           <label for="data">Data:<span class="obrigatorio" aria-hidden="true">*</span></label>
           <input id="data" v-model="novaCita.fecha" type="date" required class="centrado" />
@@ -19,20 +60,6 @@
           <label for="hora">Hora:<span class="obrigatorio" aria-hidden="true">*</span></label>
           <input id="hora" v-model="novaCita.hora" type="time" required class="centrado" />
         </div>
-      </div>
-      <!-- fila 2: paciente e doctor. Non se escriben: veñen do paciente/doctor cargado nas súas páxinas (stores de Pinia) -->
-      <div class="fila">
-        <div class="campo">
-          <label for="paciente">Paciente:<span class="obrigatorio" aria-hidden="true">*</span></label>
-          <input id="paciente" :value="textoPaciente" type="text" disabled />
-        </div>
-        <div class="campo">
-          <label for="doctor">Doctor:<span class="obrigatorio" aria-hidden="true">*</span></label>
-          <input id="doctor" :value="textoDoctor" type="text" disabled />
-        </div>
-      </div>
-      <!-- fila 3: motivo e estado -->
-      <div class="fila">
         <div class="campo">
           <label for="motivo">Motivo:<span class="obrigatorio" aria-hidden="true">*</span></label>
           <input id="motivo" v-model="novaCita.motivo" type="text" required />
@@ -46,7 +73,7 @@
           </select>
         </div>
       </div>
-      <!-- fila 4: observacións (texto longo) -->
+      <!-- fila 3: observacións (texto longo) -->
       <div class="fila">
         <div class="campo campo-observacions">
           <label for="observacions">Observacións:</label>
@@ -55,9 +82,13 @@
       </div>
       <div class="fila fila-gardar">
         <!-- un botón disabled non recibe eventos do rato: a axuda (motivoNonGardar) móstraa o span que o envolve -->
-        <span class="axuda-gardar" :data-axuda="motivoNonGardar">
-          <button type="submit" class="btn-guardar" :disabled="motivoNonGardar !== ''">Gardar</button>
-        </span>
+        <div class="botons-gardar">
+          <span class="axuda-gardar" :data-axuda="motivoNonGardar">
+            <button type="submit" class="btn-guardar" :disabled="motivoNonGardar !== ''">Gardar</button>
+          </span>
+          <!-- Limpiar ao lado de Gardar (onde xa está a man); fai o mesmo que 🧹 -->
+          <button type="button" class="btn-limpar" @click="limpiarFormCita">Limpiar</button>
+        </div>
         <p class="nota-obrigatorio"><span aria-hidden="true">*</span> campo obrigatorio</p>
       </div>
     </form>
@@ -121,28 +152,15 @@ const doctorStore = useDoctorStore();
 const citas = ref([]); // todas as citas da BD (na táboa só se ven as do paciente seleccionado)
 const gardando = ref(false); // bloquea Gardar mentres se envía a cita
 
-// datos do formulario (os mesmos campos que o modelo Cita do backend)
+// datos do formulario. Paciente e doctor NON se copian aquí: lense sempre en directo dos stores
+// (así a páxina mostra sempre quen está seleccionado agora, non quen o estaba ao abrila)
 const novaCita = reactive({
   fecha: "",
   hora: "",
-  dnipac: "",
-  doctorId: "",
   motivo: "",
   estado: "pendente",
   observacions: "",
 });
-
-// texto dos campos bloqueados de paciente e doctor (mostran quen está seleccionado)
-const textoPaciente = computed(() =>
-  pacienteStore.dnipac
-    ? `${pacienteStore.dnipac} · ${pacienteStore.nomepac} ${pacienteStore.apelpac}`
-    : "Ningún: selecciona un en Pacientes"
-);
-const textoDoctor = computed(() =>
-  doctorStore._id
-    ? `${doctorStore.nomedoc} ${doctorStore.apeldoc} · ${doctorStore.espedoc}`
-    : "Ningún: selecciona un en Doctores"
-);
 
 // citas do paciente seleccionado, ordenadas por data e hora (punto 2: non se ven as doutros pacientes)
 const citasPaciente = computed(() =>
@@ -155,8 +173,8 @@ const citasPaciente = computed(() =>
 const motivoNonGardar = computed(() => {
   if (gardando.value) return "Gardando…";
   const falta = [];
-  if (!novaCita.dnipac) falta.push("paciente (selecciónao en Pacientes)");
-  if (!novaCita.doctorId) falta.push("doctor (selecciónao en Doctores)");
+  if (!pacienteStore.dnipac) falta.push("paciente (selecciónao en Pacientes)");
+  if (!doctorStore._id) falta.push("doctor (selecciónao en Doctores)");
   if (!novaCita.fecha) falta.push("Data");
   if (!novaCita.hora) falta.push("Hora");
   if (novaCita.motivo.trim() === "") falta.push("Motivo");
@@ -165,11 +183,9 @@ const motivoNonGardar = computed(() => {
 
 /// Zona de ciclo de vida
 
-// ao abrir a páxina: carga as citas e enche paciente e doctor co que hai nos stores
+// ao abrir a páxina: carga as citas (paciente e doctor lense directamente dos stores)
 onMounted(async () => {
   await cargarDatos();
-  novaCita.dnipac = pacienteStore.dnipac ?? "";
-  novaCita.doctorId = doctorStore._id ?? "";
 });
 
 /// Zona de métodos ou funcións
@@ -181,7 +197,8 @@ async function guardarCita() {
   }
   gardando.value = true;
   try {
-    await saveCita({ ...novaCita });
+    // a cita enviase cos datos do formulario + o paciente e o doctor seleccionados nese momento
+    await saveCita({ ...novaCita, dnipac: pacienteStore.dnipac, doctorId: doctorStore._id });
     alertaExito("Cita gardada correctamente.");
     // baleiramos só os datos da cita: paciente e doctor seguen seleccionados para poder dar outra cita
     novaCita.fecha = "";
@@ -211,8 +228,6 @@ function limpiarFormCita() {
   novaCita.motivo = "";
   novaCita.observacions = "";
   novaCita.estado = "pendente";
-  novaCita.dnipac = "";
-  novaCita.doctorId = "";
   pacienteStore.limpiarPaciente();
   doctorStore.limpiarDoctor();
 }
@@ -265,6 +280,12 @@ form {
   gap: 1rem;
 }
 
+/* fila 1 (catro campos fixos + 🧹): se non cabe nunha liña pasa á seguinte en vez de saír do formulario
+   (provisional, ata estilar a páxina con Tailwind) */
+form > .fila:first-child {
+  flex-wrap: wrap;
+}
+
 /* label e campo na mesma liña; os campos de texto repártense o espazo */
 .campo {
   flex: 1;
@@ -274,9 +295,40 @@ form {
   gap: 0.5rem;
 }
 
-.campo label {
+.campo label,
+.campo .etiqueta {
   min-width: 80px;
   font-weight: 500;
+}
+
+/* DNI e ID do doctor: parecen un campo, pero son ligazóns (subliñado, cursor de man, resaltado ao pasar o rato) */
+.campo-ligazon {
+  display: block;
+  padding: 0.5rem;
+  border: 1px solid #767676;
+  border-radius: 6px;
+  background-color: #fafafa;
+  color: var(--accent);
+  text-decoration: underline;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+.campo-ligazon:hover {
+  background-color: var(--accent-soft);
+}
+
+.campo-dni .campo-ligazon {
+  width: 9em;
+}
+
+.campo-nome-doctor input {
+  flex: none;
+  width: 12em;
+}
+
+.campo-doctor .campo-ligazon {
+  width: 16em;
 }
 
 .campo input,
@@ -293,7 +345,11 @@ form {
 
 /* campos de formato fixo (data, hora, estado, DNI, ID): só o que miden */
 .campo-fixo,
-.campo-id {
+.campo-id,
+.campo-dni,
+.campo-nome-doctor,
+.campo-doctor,
+.campo-limpar {
   flex: 0 0 auto;
 }
 
@@ -307,8 +363,19 @@ form {
   width: 15em;
 }
 
+/* os dous _id de MongoDB (24 caracteres) en letra un pouco máis pequena, para que a fila 1 caiba enteira;
+   o padding vertical maior compensa a letra pequena e mantén a mesma altura que os outros campos */
+.campo-id input,
+.campo-doctor .campo-ligazon {
+  font-size: 0.8rem;
+  padding-top: 0.7rem;
+  padding-bottom: 0.7rem;
+}
+
 /* a label "ID:" sen o ancho mínimo das outras (vai despois de .campo label) */
-.campo-id label {
+.campo-id label,
+.campo-dni .etiqueta,
+.campo-doctor .etiqueta {
   min-width: auto;
 }
 
@@ -347,6 +414,25 @@ form {
   border: none;
   padding: 0.4rem 1.5rem;
   cursor: pointer;
+}
+
+/* Gardar e Limpiar na mesma liña */
+.botons-gardar {
+  display: flex;
+  gap: 1rem;
+}
+
+/* Limpiar: botón secundario (borde verde, fondo branco) para que non se confunda con Gardar */
+.btn-limpar {
+  background-color: white;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  padding: 0.4rem 1.5rem;
+  cursor: pointer;
+}
+
+.btn-limpar:hover {
+  background-color: var(--accent-soft);
 }
 
 .btn-guardar:hover:enabled {

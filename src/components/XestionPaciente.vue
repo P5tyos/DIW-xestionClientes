@@ -135,12 +135,15 @@
               Gardar
             </button>
           </span>
+          <!-- Limpiar ao lado de Gardar (onde xa está a man); fai o mesmo que 🧹 -->
+          <button type="button" class="btn-limpar" @click="limparConConfirmacion">Limpiar</button>
           <!-- Eliminar só aparece cando hai un paciente cargado no formulario (✏️ ou 🔍);
                type="button" para que non envíe o formulario (se non, tamén gardaría) -->
           <button
             v-if="editando"
             type="button"
             class="btn-eliminar"
+            title="Eliminar"
             :disabled="gardando"
             @click="eliminarPacienteCargado"
           >
@@ -228,7 +231,8 @@ import {
   alertaExito,
   alertaError,
   alertaConfirmacion, 
-  alertaInfo
+  alertaInfo,
+  alertaEliminar
 } from '../utils/alertas.js'
 import { generarPDF } from "../utils/pdf.js";
 import { usePacienteStore } from "../store/pacienteStore.js";
@@ -245,7 +249,8 @@ const editando = ref(false);
 // (se a BD tarda en responder, un segundo clic gardaría outra vez cando volvese a conexión)
 const gardando = ref(false);
 
-// store de Pinia: garda o paciente seleccionado para que a páxina de Citas saiba de quen son as citas
+// store de Pinia: o paciente cargado no formulario, para que a páxina de Citas saiba de quen son as citas.
+// Regra: seleccionado para Citas = cargado no formulario (se o formulario se baleira, deselecciónase)
 const pacienteStore = usePacienteStore();
 
 const LETRAS_DNI = "TRWAGMYFPDXBNJZSQVHLCKE"
@@ -321,6 +326,7 @@ onMounted(async() => {
     alertaError("Non se puideron cargar as provincias. Contacte co administrador do sistema.");
   }
   await cargarPacientes();
+  await recuperarSeleccionado();
 });
 
 // carga os municipios da provincia elixida no selector (ou baleira a lista se non hai provincia)
@@ -377,8 +383,7 @@ async function guardarPaciente() {
       console.log("Paciente gardado correctamente");
       alertaExito("Paciente gardado correctamente."); // gardar un novo non pide confirmación, así que si se avisa
     }
-    seleccionarPaciente(novoPaciente); // antes de baleirar o formulario (despois xa non quedarían datos)
-    limpiarFormpac(); //baleira o formulario e sae do modo edición
+    limpiarFormpac(); //baleira o formulario e sae do modo edición (e deselecciona o paciente para Citas)
   } catch (error) {
     console.error("Erro ao gardar paciente:", error);
     if (error.response?.status === 409) {
@@ -401,7 +406,8 @@ async function eliminarPaciente(index) {
   }
   const p = pacientes.value[index]; // o paciente da lista 
   // pide confirmación; Swal devolve un obxecto, por iso comprobamos isConfirmed
-  const confirmacion = await alertaConfirmacion(`Seguro que queres eliminar a ${p.nomepac} ${p.apelpac}?`);
+  // alertaEliminar: botón vermello "Eliminar" e Cancelar seleccionado, para non borrar por costume
+  const confirmacion = await alertaEliminar(`Seguro que queres eliminar a ${p.nomepac} ${p.apelpac}?`);
   if (!confirmacion.isConfirmed) {
     return; //se o usuario cancela, non se borra nada
   }
@@ -410,12 +416,9 @@ async function eliminarPaciente(index) {
     await deletePaciente(p.dnipac); //elimina o paciente da base de datos
     pacientes.value.splice(index, 1); //elimina o paciente da lista
     // se era o paciente cargado no formulario, baleirámolo (se non, Gardar intentaría modificar un paciente que xa non existe)
+    // (limpiarFormpac tamén o deselecciona para Citas, xa que non existe)
     if (editando.value && novoPaciente.dnipac === p.dnipac) {
       limpiarFormpac();
-    }
-    // se era o paciente seleccionado para Citas, deselecciónase (xa non existe)
-    if (pacienteStore.dnipac === p.dnipac) {
-      pacienteStore.limpiarPaciente();
     }
     console.log("Paciente eliminado correctamente"); // sen mensaxe de éxito: xa se confirmou e a fila desaparece da táboa
   } catch (error) {
@@ -440,14 +443,34 @@ async function editarUsuario(index){
   if (!(await confirmarDescartar())) {
     return;
   }
+  await cargarNoFormulario(pacientes.value[index]);
+}
+
+// carga un paciente no formulario en modo edición e selecciónao para Citas (úsano ✏️, 🔍 e recuperarSeleccionado)
+async function cargarNoFormulario(paciente) {
   limpiarFormpac(); // baleiramos antes: Object.assign deixaría os datos vellos nos campos que este paciente non teña
-  Object.assign(novoPaciente, pacientes.value[index]);
+  Object.assign(novoPaciente, paciente);
   //evitar que se cargue o _id de MongoDB no formulario
   delete novoPaciente._id;
   editando.value = true;
   await cargarMunicipios();
   copiaOrixinal.value = fotoFormulario(); // para saber despois se se cambiou algo
-  seleccionarPaciente(novoPaciente); // o paciente que se acaba de cargar no formulario
+  seleccionarPaciente(novoPaciente); // o paciente cargado queda seleccionado para Citas
+}
+
+// ao volver a esta páxina (ao saír dela o formulario pérdese): se hai un paciente seleccionado, cárgao outra vez no formulario.
+// Así "cargado no formulario" e "seleccionado para Citas" sempre coinciden
+async function recuperarSeleccionado() {
+  const dni = pacienteStore.dnipac;
+  if (!dni) {
+    return;
+  }
+  const paciente = pacientes.value.find((p) => p.dnipac === dni);
+  if (paciente) {
+    await cargarNoFormulario(paciente);
+  } else {
+    pacienteStore.limpiarPaciente(); // xa non existe (por exemplo, borrado noutra pestana)
+  }
 }
 
 // botón 🧹: baleira o formulario, sae do modo edición e quita as mensaxes de erro
@@ -465,14 +488,14 @@ const limpiarFormpac = () => {
   telefonoIncorrecto.value = false;
   municipios.value = []; // baleira tamén a lista de municipios da provincia anterior
   copiaOrixinal.value = null;
+  pacienteStore.limpiarPaciente(); // formulario baleiro = ningún paciente seleccionado para Citas
 };
 
 // botón 🧹: se hai datos sen gardar pide confirmación antes de baleirar o formulario
 // (limpiarFormpac úsase tamén despois de gardar ou eliminar, e aí non debe preguntar)
 async function limparConConfirmacion() {
   if (await confirmarDescartar()) {
-    limpiarFormpac();
-    pacienteStore.limpiarPaciente(); // 🧹 tamén deselecciona o paciente para Citas
+    limpiarFormpac(); // tamén deselecciona o paciente para Citas
   }
 }
 
@@ -493,14 +516,7 @@ async function buscarPaciente() {
   }
   try {
     const paciente = await getPacienteByDni(dni);
-    limpiarFormpac(); // baleiramos antes: Object.assign deixaría os datos vellos nos campos que este paciente non teña
-    Object.assign(novoPaciente, paciente);
-    //evitar que se cargue o _id de MongoDB no formulario
-    delete novoPaciente._id;
-    editando.value = true;
-    await cargarMunicipios();
-    copiaOrixinal.value = fotoFormulario();
-    seleccionarPaciente(paciente);
+    await cargarNoFormulario(paciente);
     console.log("Paciente atopado", paciente); // sen mensaxe: os datos aparecen no formulario
   } catch(error){
     if (error.response?.status === 404 ){
@@ -856,7 +872,22 @@ input.campo-erro {
 }
 
 /* Eliminar: mesma forma que Gardar, en vermello (texto branco con contraste 5:1) */
+/* Limpiar: botón secundario (borde verde, fondo branco) para que non se confunda con Gardar */
+.btn-limpar {
+  background-color: white;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  padding: 0.4rem 1.5rem;
+  cursor: pointer;
+}
+
+.btn-limpar:hover {
+  background-color: var(--accent-soft);
+}
+
+/* Eliminar: terceiro botón, cun espazo maior antes para non premelo sen querer */
 .btn-eliminar {
+  margin-left: 2.5rem;
   background-color: var(--danger);
   color: white;
   border: none;

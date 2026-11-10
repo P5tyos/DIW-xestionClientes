@@ -45,3 +45,21 @@ export const alertaConfirmacion = (mensaje, titulo = 'Atención!') => {
         reverseButtons: false
     })
 }
+
+
+// Confirmación dun borrado (acción que non se pode desfacer): máis difícil de aceptar "por costume"
+// - o botón principal di "Eliminar" e vai en vermello (non un "Aceptar" xenérico)
+// - Cancelar vén seleccionado: Enter ou un clic rápido sen ler cancelan en vez de borrar
+export const alertaEliminar = (mensaje, titulo = 'Eliminar?') => {
+    return Swal.fire({
+        icon: 'warning',
+        title: titulo,
+        text: mensaje,
+        showCancelButton: true,
+        confirmButtonText: 'Eliminar',
+        confirmButtonColor: '#b84d4d', // --danger da paleta (Swal non le as variables CSS)
+        cancelButtonText: 'Cancelar',
+        reverseButtons: true,
+        focusCancel: true
+    })
+}

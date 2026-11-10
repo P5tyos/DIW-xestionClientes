@@ -106,12 +106,15 @@
               Gardar
             </button>
           </span>
+          <!-- Limpiar ao lado de Gardar (onde xa está a man); fai o mesmo que 🧹 -->
+          <button type="button" class="btn-limpar" @click="limparConConfirmacion">Limpiar</button>
           <!-- Eliminar só aparece cando hai un doctor cargado no formulario (✏️);
                type="button" para que non envíe o formulario (se non, tamén gardaría) -->
           <button
             v-if="editando"
             type="button"
             class="btn-eliminar"
+            title="Eliminar"
             :disabled="gardando"
             @click="eliminarDoctorCargado"
           >
@@ -200,7 +203,8 @@ import {
   alertaExito,
   alertaError,
   alertaConfirmacion,
-  alertaInfo
+  alertaInfo,
+  alertaEliminar
 } from "../utils/alertas.js";
 import { generarPDF } from "../utils/pdf.js";
 import { useDoctorStore } from "../store/doctorStore.js";
@@ -212,7 +216,8 @@ const editando = ref(false);
 // true mentres se envía un gardado ou un borrado ao servidor: bloquea Gardar e Eliminar para non envialo dúas veces
 const gardando = ref(false);
 
-// store de Pinia: garda o doctor seleccionado para que a páxina de Citas o use
+// store de Pinia: o doctor cargado no formulario, para usalo na páxina de Citas.
+// Regra: seleccionado para Citas = cargado no formulario (se o formulario se baleira, deselecciónase)
 const doctorStore = useDoctorStore();
 const correoInvalido = ref(false);
 const telefonoIncorrecto = ref(false);
@@ -290,6 +295,7 @@ onMounted(async () => {
     alertaError("Non se puideron cargar as especialidades. Contacte co administrador do sistema.");
   }
   await cargarDoctores();
+  recuperarSeleccionado();
 });
 
 /// Zona de métodos ou funcións
@@ -320,16 +326,13 @@ async function guardarDoctor() {
   try {
     if (editando.value) {
       await modifyDoctor(novoDoctor._id, novoDoctor); // identificamos o doctor polo _id de MongoDB
-      doctorStore.seleccionarDoctor(novoDoctor); // queda seleccionado para Citas
       console.log("Doctor modificado correctamente");
     } else {
-      // un doctor novo aínda non ten _id: collémolo da resposta do servidor
-      const doctorGardado = await saveDoctor(novoDoctor);
-      doctorStore.seleccionarDoctor(doctorGardado); // queda seleccionado para Citas
+      await saveDoctor(novoDoctor);
       console.log("Doctor gardado correctamente");
       alertaExito("Doctor gardado correctamente."); // gardar un novo non pide confirmación, así que si se avisa
     }
-    limpiarFormdoc(); //baleira o formulario e sae do modo edición
+    limpiarFormdoc(); //baleira o formulario e sae do modo edición (e deselecciona o doctor para Citas)
   } catch (error) {
     console.error("Erro ao gardar doctor:", error);
     if (error.response?.status === 409) {
@@ -352,7 +355,8 @@ async function eliminarDoctor(index) {
   }
   const d = doctores.value[index];
   // pide confirmación; Swal devolve un obxecto, por iso comprobamos isConfirmed
-  const confirmacion = await alertaConfirmacion(`Seguro que queres eliminar a ${d.nomedoc} ${d.apeldoc}?`);
+  // alertaEliminar: botón vermello "Eliminar" e Cancelar seleccionado, para non borrar por costume
+  const confirmacion = await alertaEliminar(`Seguro que queres eliminar a ${d.nomedoc} ${d.apeldoc}?`);
   if (!confirmacion.isConfirmed) {
     return; //se o usuario cancela, non se borra nada
   }
@@ -361,12 +365,9 @@ async function eliminarDoctor(index) {
     await deleteDoctor(d._id); // borra o doctor da BD polo seu _id
     doctores.value.splice(index, 1); // e quítao da táboa
     // se era o doctor cargado no formulario, baleirámolo (se non, Gardar intentaría modificar un doctor que xa non existe)
+    // (limpiarFormdoc tamén o deselecciona para Citas, xa que non existe)
     if (editando.value && novoDoctor._id === d._id) {
       limpiarFormdoc();
-    }
-    // se era o doctor seleccionado para Citas, deselecciónase (xa non existe)
-    if (doctorStore._id === d._id) {
-      doctorStore.limpiarDoctor();
     }
     console.log("Doctor eliminado correctamente"); // sen mensaxe de éxito: xa se confirmou e a fila desaparece
   } catch (error) {
@@ -391,13 +392,33 @@ async function editarDoctor(index) {
   if (!(await confirmarDescartar())) {
     return;
   }
+  cargarNoFormulario(doctores.value[index]);
+}
+
+// carga un doctor no formulario en modo edición e selecciónao para Citas (úsano ✏️ e recuperarSeleccionado)
+function cargarNoFormulario(doctor) {
   limpiarFormdoc(); // baleiramos antes: Object.assign deixaría os datos vellos nos campos que este doctor non teña
   // copia tamén o _id: precisámolo para que Gardar saiba que doctor modificar
   // (ao revés que en pacientes, que se identifican polo DNI e o _id bórrase)
-  Object.assign(novoDoctor, doctores.value[index]);
+  Object.assign(novoDoctor, doctor);
   editando.value = true;
   copiaOrixinal.value = fotoFormulario(); // para saber despois se se cambiou algo
   doctorStore.seleccionarDoctor(novoDoctor); // o doctor cargado queda seleccionado para Citas
+}
+
+// ao volver a esta páxina (ao saír dela o formulario pérdese): se hai un doctor seleccionado, cárgao outra vez no formulario.
+// Así "cargado no formulario" e "seleccionado para Citas" sempre coinciden
+function recuperarSeleccionado() {
+  const id = doctorStore._id;
+  if (!id) {
+    return;
+  }
+  const doctor = doctores.value.find((d) => d._id === id);
+  if (doctor) {
+    cargarNoFormulario(doctor);
+  } else {
+    doctorStore.limpiarDoctor(); // xa non existe
+  }
 }
 
 // baleira o formulario, sae do modo edición e quita as mensaxes de erro (non pregunta: úsase tamén despois de gardar/eliminar)
@@ -413,13 +434,13 @@ function limpiarFormdoc() {
   correoInvalido.value = false;
   telefonoIncorrecto.value = false;
   copiaOrixinal.value = null;
+  doctorStore.limpiarDoctor(); // formulario baleiro = ningún doctor seleccionado para Citas
 }
 
 // botón 🧹: se hai datos sen gardar pide confirmación antes de baleirar o formulario
 async function limparConConfirmacion() {
   if (await confirmarDescartar()) {
-    limpiarFormdoc();
-    doctorStore.limpiarDoctor(); // 🧹 tamén deselecciona o doctor para Citas
+    limpiarFormdoc(); // tamén deselecciona o doctor para Citas
   }
 }
 
@@ -733,7 +754,22 @@ input.campo-erro {
 }
 
 /* Eliminar: mesma forma que Gardar, en vermello (texto branco con contraste 5:1) */
+/* Limpiar: botón secundario (borde verde, fondo branco) para que non se confunda con Gardar */
+.btn-limpar {
+  background-color: white;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  padding: 0.4rem 1.5rem;
+  cursor: pointer;
+}
+
+.btn-limpar:hover {
+  background-color: var(--accent-soft);
+}
+
+/* Eliminar: terceiro botón, cun espazo maior antes para non premelo sen querer */
 .btn-eliminar {
+  margin-left: 2.5rem;
   background-color: var(--danger);
   color: white;
   border: none;

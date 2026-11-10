@@ -1,3 +1,5 @@
+@import "tailwindcss";
+
 :root {
   /* paleta: todos os verdes son do mesmo ton (150°), só cambia a luminosidade */
   --text: #3a4a41;          /* texto normal: gris verdoso */
