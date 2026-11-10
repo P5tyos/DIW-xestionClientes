@@ -67,6 +67,7 @@ npx eslint src           # lint (flat config in eslint.config.js); expect many f
 - `Object.assign(form, record)` leaves extra keys (`_id`, `__v`) and keeps old values for keys the record doesn't have. Account for that when loading or clearing.
 
 ## Styling conventions
+- **`GUIA-ESTILO.md` is the reference for all styling** (colour tokens with Galician names like `acento`/`titulo`/`perigo`, text scale on a 16 px base, 4 px spacing, button/field/table/title specs, Lucide SVG icons instead of emoji). A refactor to **Tailwind utility classes only** is in progress, page by page; repeated pieces become small Vue components. The bullets below describe the pre-refactor CSS and will be replaced as pages are migrated.
 - `src/style.css` holds the global palette as CSS variables (one green hue: `--accent`, `--accent-dark`, `--accent-light`, `--accent-soft`, `--heading-bg`, `--text-h`, `--danger`) and the global alignment classes. Use the variables, not new hex colours; white text is only used on colours with ≥4.5:1 contrast.
 - Alignment rule (teacher's requirement): text left (default), numbers/DNI/IDs/dates/phones `.centrado`, calculated amounts (future invoices) `.dereita`.
 - Component styles are `scoped`. `#app` centres text globally, so each page panel sets `text-align: left`.
