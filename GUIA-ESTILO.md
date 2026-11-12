@@ -83,6 +83,7 @@ branco sobre `acento` 5.0 · `titulo` sobre branco 7.8 · `titulo` sobre `banda`
 | Icona de borrar (🗑️ nas táboas) | igual, pero `border-perigo text-perigo hover:bg-perigo-suave` |
 
 Comúns: `px-5 rounded-md text-base font-semibold`.
+Botóns de acción dos formularios (Gardar, Limpiar, Eliminar): todos do mesmo ancho, `md:w-27` (108 px, o de "Eliminar"); no móbil, todo o ancho (`w-full`).
 Desactivado: `disabled:bg-desactivado disabled:text-texto-desactivado disabled:cursor-not-allowed`.
 Foco (teclado): `focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-foco`.
 

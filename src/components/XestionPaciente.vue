@@ -1,5 +1,6 @@
 <template>
-  <TarxetaPanel etiqueta="div" class="w-full text-left">
+  <!-- rounded-t-none: as esquinas de arriba rectas, para que o panel quede pegado ao menú sen oco; as de abaixo seguen redondeadas -->
+  <TarxetaPanel etiqueta="div" class="w-full rounded-t-none text-left">
     <TituloSeccion><Users class="size-5" aria-hidden="true" /> Xestión de pacientes</TituloSeccion>
 
     <form class="mb-8 flex flex-col gap-4" @submit.prevent="guardarPaciente">
@@ -102,8 +103,6 @@
         </CampoFormulario>
       </div>
 
-      <p class="text-right text-sm"><span class="text-perigo" aria-hidden="true">*</span> campo obrigatorio</p>
-
       <!-- política de privacidade, erros e botóns, centrados -->
       <div class="flex flex-col items-center gap-4">
         <label class="flex items-start gap-2">
@@ -130,7 +129,8 @@
           </p>
         </CaixaErros>
 
-        <!-- botóns: no móbil un debaixo do outro a todo o ancho; desde md en liña. Eliminar sempre separado -->
+        <!-- botóns: no móbil un debaixo do outro a todo o ancho; desde md en liña e todos do mesmo ancho
+             (md:w-27 = 108 px, o do máis longo, "Eliminar"). Eliminar sempre separado -->
         <div class="flex w-full flex-col gap-3 md:w-auto md:flex-row md:items-center">
           <!-- axuda de Gardar ("Para gardar falta…"): un botón disabled non recibe o rato, así que o tooltip
                móstrao o span que o envolve (group-hover), só en pantallas con rato (pointer-fine).
@@ -139,7 +139,7 @@
           <span class="group relative flex md:inline-flex" :class="motivoNonGardar ? 'cursor-not-allowed' : ''">
             <BotonAccion
               tipo="submit"
-              class="w-full disabled:pointer-events-none md:w-auto"
+              class="w-full disabled:pointer-events-none md:w-27"
               :disabled="motivoNonGardar !== ''"
               :aria-describedby="motivoNonGardar ? 'axuda-gardar' : undefined"
             >
@@ -154,12 +154,12 @@
             </span>
           </span>
           <!-- Limpiar ao lado de Gardar (onde xa está a man); fai o mesmo que 🧹 -->
-          <BotonAccion variante="secundario" class="w-full md:w-auto" @click="limparConConfirmacion">Limpiar</BotonAccion>
+          <BotonAccion variante="secundario" class="w-full md:w-27" @click="limparConConfirmacion">Limpiar</BotonAccion>
           <!-- Eliminar só aparece cando hai un paciente cargado (✏️ ou 🔍); separado dos outros para non premelo sen querer -->
           <BotonAccion
             v-if="editando"
             variante="perigo"
-            class="mt-4 w-full md:mt-0 md:ml-10 md:w-auto"
+            class="mt-4 w-full md:mt-0 md:ml-10 md:w-27"
             title="Eliminar"
             :disabled="gardando"
             @click="eliminarPacienteCargado"
@@ -229,6 +229,8 @@
     <p v-else>Non hai pacientes cargados.</p>
   </TarxetaPanel>
 </template>
+
+<!--XXXXXXXXXXXXXXXXXXXXXX  ZONA DE SCRIPTS  XXXXXXXXXXXXXXXXXXXXXXXX -->
 
 <script setup>
 
@@ -673,8 +675,7 @@ function formatearNome(valor) {
     .split(/\s+/)  // separa polas palabras aínda que haxa varios espazos seguidos entre elas
     .map((palabra) => palabra.charAt(0).toUpperCase() + palabra.slice(1).toLowerCase())
     .join(" ")
-}
-
+  }
+  
 </script>
 
-<!--XXXXXXXXXXXXXXXXXXXXXX  ZONA DE ESTILOS  XXXXXXXXXXXXXXXXXXXXXXXX -->
