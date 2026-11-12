@@ -36,6 +36,11 @@ branco sobre `acento` 5.0 · `titulo` sobre branco 7.8 · `titulo` sobre `banda`
 `acento-claro` sobre `acento` (subliñado do menú) 3.1.
 `#6BBF8A` e `#4B9B6E` non chegan a 4.5 con ningún texto, por iso non levan texto.
 
+**Excepcións:**
+- O vermello do logo (corazón, `#e63946`) é parte do logo, non da interface: non se usa para nada máis.
+- Sobre fondo verde (menú, pé) o contorno de foco vai en `acento-claro` (3.1:1), porque `foco` non se vería (1.5:1):
+  `focus-visible:outline-acento-claro`.
+
 ## 2. Tipografía
 
 - Fonte do sistema (`font-sans`): sen descargas nin cuestións legais.
