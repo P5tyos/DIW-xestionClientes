@@ -5,6 +5,7 @@
 
     <form class="mb-8 flex flex-col gap-4" @submit.prevent="guardarCita">
       <!-- fila 1: ID da cita, DNI do paciente, nome do doctor, ID do doctor e 🧹 (ningún se escribe).
+           ID cita, DNI e ID doctor co mesmo ancho (md:w-60, o que precisan os _id de 24 caracteres).
            No móbil, un por fila; desde md en liña, co 🧹 aliñado abaixo cos campos -->
       <div class="flex flex-col gap-4 md:flex-row md:items-end">
         <CampoFormulario id="id" etiqueta="ID cita" class="md:w-60" v-slot="{ clases }">
@@ -16,7 +17,7 @@
              cargado no formulario (alí se escolle ou se cambia). Sen ninguén seleccionado mostran "—".
              Parecen campos, pero co texto verde subliñado de ligazón. Unha <label for> non pode apuntar a unha ligazón,
              por iso a etiqueta é un <span> unido con aria-labelledby -->
-        <div class="flex flex-col gap-1 md:w-36">
+        <div class="flex flex-col gap-1 md:w-60">
           <span id="etiqueta-paciente" class="text-sm font-semibold text-titulo">
             DNI paciente<span class="ml-0.5 text-perigo" aria-hidden="true">*</span>
           </span>
@@ -154,6 +155,14 @@
               <td class="border border-acento-claro p-3">{{ c.motivo }}</td>
               <td class="border border-acento-claro p-3">{{ c.estado }}</td>
               <td class="border border-acento-claro p-3">{{ c.observacions }}</td>
+              <td class="border border-acento-claro p-3">
+                <!-- ✏️ carga a cita no formulario para editala (as citas non se borran: gárdanse sempre, só cambia o estado) -->
+                <div class="flex justify-center">
+                  <BotonAccion variante="icona" title="Editar" :aria-label="`Editar a cita do ${formatearData(c.fecha)} ás ${c.hora}`" @click="editarCita(c)">
+                    <Pencil class="size-4" aria-hidden="true" />
+                  </BotonAccion>
+                </div>
+              </td>
             </tr>
           </tbody>
         </table>
@@ -168,18 +177,18 @@
 /// Zona de declaracións
 
 import { ref, reactive, computed, onMounted } from "vue";
-import { getCitas, saveCita } from "../api/citas.js";
+import { getCitas, saveCita, modifyCita } from "../api/citas.js";
 import { usePacienteStore } from "../store/pacienteStore.js";
 import { useDoctorStore } from "../store/doctorStore.js";
-import { alertaExito, alertaError } from "../utils/alertas.js";
-import { CalendarDays, ClipboardList, BrushCleaning } from "lucide-vue-next";
+import { alertaExito, alertaError, alertaConfirmacion, alertaInfo } from "../utils/alertas.js";
+import { CalendarDays, ClipboardList, BrushCleaning, Pencil } from "lucide-vue-next";
 import TarxetaPanel from "./comun/TarxetaPanel.vue";
 import TituloSeccion from "./comun/TituloSeccion.vue";
 import CampoFormulario from "./comun/CampoFormulario.vue";
 import BotonAccion from "./comun/BotonAccion.vue";
 
 // cabeceiras da táboa (así o <th> escríbese unha soa vez)
-const cabeceiras = ["Data", "Hora", "Paciente", "Doctor", "Especialidade", "Motivo", "Estado", "Observacións"];
+const cabeceiras = ["Data", "Hora", "Paciente", "Doctor", "Especialidade", "Motivo", "Estado", "Observacións", "Accións"];
 
 // paciente e doctor seleccionados nas súas páxinas (Pinia): de aquí sae para quen e con quen é a cita
 const pacienteStore = usePacienteStore();
@@ -187,9 +196,16 @@ const doctorStore = useDoctorStore();
 
 const citas = ref([]); // todas as citas da BD (na táboa só se ven as do paciente seleccionado)
 const gardando = ref(false); // bloquea Gardar mentres se envía a cita
+const editando = ref(false); // true cando hai unha cita cargada (✏️): Gardar modifícaa en vez de crear outra
+
+// campos da cita que se editan no formulario
+const CAMPOS = ["fecha", "hora", "motivo", "estado", "observacions"];
+// copia dos datos da cita tal como se cargou (✏️), para saber se hai cambios sen gardar; null se é unha cita nova
+const copiaOrixinal = ref(null);
 
 // datos do formulario. Paciente e doctor NON se copian aquí: lense sempre en directo dos stores
-// (así a páxina mostra sempre quen está seleccionado agora, non quen o estaba ao abrila)
+// (así a páxina mostra sempre quen está seleccionado agora, non quen o estaba ao abrila).
+// Ao editar unha cita engádeselle o seu _id (vese en "ID cita" e úsase para modificala)
 const novaCita = reactive({
   fecha: "",
   hora: "",
@@ -226,22 +242,35 @@ onMounted(async () => {
 
 /// Zona de métodos ou funcións
 
-// botón Gardar: garda a cita nova para o paciente e doctor seleccionados
+// botón Gardar: modifica a cita cargada (pedindo confirmación) ou garda unha nova para o paciente e doctor seleccionados
 async function guardarCita() {
   if (motivoNonGardar.value !== "") {
     return; // (por se se preme Enter cun dato sen cubrir)
   }
+  if (editando.value) {
+    // se non se cambiou nada non hai nada que gardar
+    if (!haiCambiosSenGardar()) {
+      alertaInfo("Non hai cambios que gardar.");
+      return;
+    }
+    // pedimos confirmación; ao confirmar xa non se mostra mensaxe de éxito (o cambio vese na táboa)
+    const confirmacion = await alertaConfirmacion(`Seguro que queres gardar os cambios da cita do ${formatearData(novaCita.fecha)} ás ${novaCita.hora}?`);
+    if (!confirmacion.isConfirmed) {
+      return;
+    }
+  }
+  // datos que se envían: os campos da cita + o paciente e o doctor seleccionados (sen o _id: vai na URL ao modificar)
+  const datos = { ...datosFormulario(), dnipac: pacienteStore.dnipac, doctorId: doctorStore._id };
   gardando.value = true;
   try {
-    // a cita enviase cos datos do formulario + o paciente e o doctor seleccionados nese momento
-    await saveCita({ ...novaCita, dnipac: pacienteStore.dnipac, doctorId: doctorStore._id });
-    alertaExito("Cita gardada correctamente.");
+    if (editando.value) {
+      await modifyCita(novaCita._id, datos);
+    } else {
+      await saveCita(datos);
+      alertaExito("Cita gardada correctamente."); // crear non pide confirmación, así que si se avisa
+    }
     // baleiramos só os datos da cita: paciente e doctor seguen seleccionados para poder dar outra cita
-    novaCita.fecha = "";
-    novaCita.hora = "";
-    novaCita.motivo = "";
-    novaCita.observacions = "";
-    novaCita.estado = "pendente";
+    baleirarCita();
   } catch (error) {
     console.error("Erro ao gardar a cita:", error);
     if (error.response?.status === 404) {
@@ -254,16 +283,36 @@ async function guardarCita() {
   } finally {
     gardando.value = false;
   }
-  await cargarDatos(); // a cita nova aparece na táboa
+  await cargarDatos(); // a cita nova ou modificada aparece na táboa
 }
 
-// botón 🧹: baleira o formulario e deselecciona paciente e doctor (punto 8)
-function limpiarFormCita() {
-  novaCita.fecha = "";
-  novaCita.hora = "";
-  novaCita.motivo = "";
-  novaCita.observacions = "";
-  novaCita.estado = "pendente";
+// botón ✏️: carga a cita no formulario para editala. O seu doctor pasa a ser o doctor seleccionado,
+// así o formulario mostra (e garda) o doctor correcto. Se hai cambios sen gardar, pregunta antes
+async function editarCita(cita) {
+  if (!(await confirmarDescartar())) {
+    return;
+  }
+  baleirarCita();
+  CAMPOS.forEach((campo) => {
+    novaCita[campo] = cita[campo] ?? "";
+  });
+  novaCita._id = cita._id;
+  if (cita.doctorId) {
+    doctorStore.seleccionarDoctor(cita.doctorId); // doctorId vén "populado": é o doctor enteiro
+  } else {
+    doctorStore.limpiarDoctor(); // o doctor xa non existe: haberá que escoller outro para gardar
+  }
+  editando.value = true;
+  copiaOrixinal.value = fotoFormulario(); // para saber despois se se cambiou algo
+}
+
+// botóns 🧹 e Limpiar: baleira o formulario e deselecciona paciente e doctor (punto 8).
+// Se hai datos sen gardar, pregunta antes
+async function limpiarFormCita() {
+  if (!(await confirmarDescartar())) {
+    return;
+  }
+  baleirarCita();
   pacienteStore.limpiarPaciente();
   doctorStore.limpiarDoctor();
 }
@@ -278,6 +327,46 @@ async function cargarDatos() {
     console.error("Erro ao cargar as citas:", error);
     alertaError("Non se puido cargar a lista de citas. Contacte co administrador do sistema.");
   }
+}
+
+// baleira os datos da cita e sae do modo edición (non toca o paciente nin o doctor seleccionados)
+function baleirarCita() {
+  CAMPOS.forEach((campo) => {
+    novaCita[campo] = campo === "estado" ? "pendente" : "";
+  });
+  delete novaCita._id; // un _id baleiro faría fallar a seguinte cita nova
+  editando.value = false;
+  copiaOrixinal.value = null;
+}
+
+// os campos da cita do formulario, sen o _id
+function datosFormulario() {
+  return Object.fromEntries(CAMPOS.map((campo) => [campo, novaCita[campo]]));
+}
+
+// "foto" da cita do formulario (e do seu doctor) como texto, para comparala coa cita cargada
+function fotoFormulario() {
+  return JSON.stringify({ ...datosFormulario(), doctorId: doctorStore._id });
+}
+
+// hai datos no formulario que se perderían?
+// - cita cargada (✏️): se algo cambiou desde que se cargou
+// - cita nova: se se escribiu algo (ou se cambiou o estado)
+function haiCambiosSenGardar() {
+  if (copiaOrixinal.value !== null) {
+    return fotoFormulario() !== copiaOrixinal.value;
+  }
+  return ["fecha", "hora", "motivo", "observacions"].some((campo) => String(novaCita[campo]).trim() !== "")
+    || novaCita.estado !== "pendente";
+}
+
+// se hai datos sen gardar, pregunta se se descartan. Devolve true se se pode continuar
+async function confirmarDescartar() {
+  if (!haiCambiosSenGardar()) {
+    return true;
+  }
+  const confirmacion = await alertaConfirmacion("Hai datos sen gardar que se perderán. Queres descartalos?");
+  return confirmacion.isConfirmed;
 }
 
 // "2026-11-20" → "20/11/2026"
