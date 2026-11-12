@@ -67,13 +67,13 @@ branco sobre `acento` 5.0 · `titulo` sobre branco 7.8 · `titulo` sobre `banda`
 
 ## 5. Compoñentes
 
-### Botóns (altura 40 px: `h-10`)
+### Botóns (altura 44 px en móbil, 40 px en escritorio: `h-11 md:h-10`)
 | Variante | Clases |
 |---|---|
 | Principal (Gardar) | `bg-acento text-white hover:bg-acento-escuro` |
 | Secundario (Limpiar, PDF) | `bg-white text-acento border border-acento hover:bg-acento-suave` |
 | Perigo (Eliminar) | `bg-perigo text-white hover:brightness-90` — sempre separado dos outros |
-| Icona (🔍 🧹 ✏️ 🗑️) | cadrado `size-10`, `border border-borde`, icona SVG de 20 px |
+| Icona (🔍 🧹 ✏️ 🗑️) | cadrado `size-11 md:size-10`, `border border-borde`, icona SVG de 20 px |
 
 Comúns: `px-5 rounded-md text-base font-semibold`.
 Desactivado: `disabled:bg-desactivado disabled:text-texto-desactivado disabled:cursor-not-allowed`.
@@ -83,7 +83,7 @@ Foco (teclado): `focus-visible:outline-3 focus-visible:outline-offset-2 focus-vi
 - Conxunto **Lucide** (`lucide-vue-next`, licenza ISC), en lugar de emoji: igual en todos os sistemas e coa cor da paleta.
 - Tamaño 20 px (`size-5`), cor `currentColor` (colle a do botón). A icona leva `aria-hidden`; o botón leva `aria-label`.
 
-### Campos (altura 40 px: `h-10`)
+### Campos (altura 44 px en móbil, 40 px en escritorio: `h-11 md:h-10`)
 - Normal: `px-3 rounded-md border border-borde bg-white text-base`.
 - Foco: `focus:border-acento focus:outline-none focus:ring-3 focus:ring-acento-claro`.
 - Erro: `border-perigo bg-perigo-suave` + anel `ring-perigo`.
@@ -103,11 +103,21 @@ Foco (teclado): `focus-visible:outline-3 focus-visible:outline-offset-2 focus-vi
 ### Paneis e tarxetas
 `bg-white rounded-xl shadow-md p-8` (`p-4` en móbil).
 
-## 6. Disposición
+## 6. Disposición e móbil
+
+**Primeiro móbil** (como traballa Tailwind): as clases sen prefixo son para o teléfono; `md:` (desde 768 px) cambia o que faga falta para escritorio.
+Exemplo: `flex flex-col md:flex-row` = unha columna no móbil, fila no escritorio.
 
 - Ancho da páxina: o mesmo en todas.
-- Formularios en filas; por debaixo de 768 px (`md`) as filas pasan a unha columna.
-- Campos de formato fixo (DNI, ID, teléfono, data, selects, radios) con ancho fixo; os de texto repártense o resto.
+- **Formularios:** no móbil, un campo por fila coa etiqueta enriba; desde `md`, as filas acordadas coa etiqueta á esquerda.
+  Campos de formato fixo (DNI, ID, teléfono, data, selects, radios) con ancho fixo en escritorio; no móbil ocupan todo o ancho.
+- **Botóns de Gardar / Limpiar / Eliminar:** no móbil, un debaixo do outro e a todo o ancho, con Eliminar separado dos outros dous;
+  desde `md`, en liña como agora.
+- **Menú:** no móbil, botón ☰ que abre o menú en vertical; desde `md`, o menú normal en liña.
+- **Táboas:** no móbil, desprazamento horizontal dentro da propia táboa (`overflow-x-auto` nun contedor), sen que se desprace a páxina enteira.
+  (Alternativa para máis adiante: cada fila como tarxeta.)
+- **Axuda de Gardar ("Para gardar falta…"):** nas pantallas táctiles non hai "pasar o rato", así que o texto móstrase **debaixo do botón**
+  en vez de só ao pasar o rato; tamén o len así os lectores de pantalla.
 
 ## 7. Aliñamento (requisito do profesor)
 
@@ -117,5 +127,5 @@ Texto á esquerda · números, DNI, ID, datas e teléfonos centrados (`text-cent
 
 - Contraste ≥ 4.5:1 en todo texto.
 - Foco visible en todo o que se pode usar co teclado.
-- Elementos clicables de polo menos 40 × 40 px.
+- Elementos clicables de polo menos 44 × 44 px no móbil (40 × 40 en escritorio).
 - O que se move máis de 5 s pódese parar; respectar "movemento reducido".
