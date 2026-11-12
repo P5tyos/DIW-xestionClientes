@@ -1,39 +1,16 @@
 <template>
-  <div id="app">
+  <!-- contedor da app: mesmo ancho en todas as páxinas, menú arriba, páxina no medio e pé abaixo.
+       Sen id="app": ese id xa o ten o div de index.html onde se monta Vue (non pode haber dous).
+       text-center é PROVISIONAL para as páxinas aínda sen migrar (centraban o texto); as migradas poñen o seu propio aliñamento -->
+  <div class="mx-auto flex min-h-screen w-full max-w-6xl flex-col py-4 text-center">
     <NavBar />
-    <!-- Aquí se carga el router-view -->
+    <!-- Aquí se carga a páxina de cada ruta -->
     <router-view />
     <FooTer />
   </div>
 </template>
 
 <script setup>
-  import NavBar from './components/NavBar.vue'
-  import FooTer from './components/FooTer.vue'
-  //import { RouterView } from 'vue-router'
+import NavBar from './components/NavBar.vue'
+import FooTer from './components/FooTer.vue'
 </script>
-
-<style>
-/* 👇 Estilos globales mínimos */
-body {
-  margin: 0;               /* quita el margen por defecto del body */
-}
-
-#app {
-  max-width: 80vw;
-  margin: 0 auto;          /* centra horizontalmente */
-  padding-top: 1rem;       /* 🔹 margen superior pequeño */
-  padding-bottom: 1rem;    /* 🔹 espacio para el futuro footer */
-  min-height: 100vh;       /* ocupa toda la altura de la pantalla */
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start; /* el contenido empieza arriba */
-}
-/* Cuando la pantalla es menor a 768px */
-@media (max-width: 768px) {
-  .container {
-    flex-direction: column;
-  }
-}
-
-</style>

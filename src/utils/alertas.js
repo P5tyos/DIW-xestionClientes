@@ -57,7 +57,7 @@ export const alertaEliminar = (mensaje, titulo = 'Eliminar?') => {
         text: mensaje,
         showCancelButton: true,
         confirmButtonText: 'Eliminar',
-        confirmButtonColor: '#b84d4d', // --danger da paleta (Swal non le as variables CSS)
+        confirmButtonColor: '#a63d3d', // perigo da paleta (Swal non le as variables CSS)
         cancelButtonText: 'Cancelar',
         reverseButtons: true,
         focusCancel: true

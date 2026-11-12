@@ -4,8 +4,8 @@
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 
-// verde da paleta (--accent: #217d4f) en RGB, para a cabeceira da táboa
-const VERDE = [33, 125, 79];
+// verde da paleta (acento: #2E7D5C) en RGB, para a cabeceira da táboa (jsPDF non le as cores do CSS)
+const VERDE = [46, 125, 92];
 
 // crea un PDF cunha táboa e ábreo nunha pestana nova do navegador (para ver, imprimir ou descargar)
 // - subtitulo: liña opcional baixo a data (ex: o filtro aplicado e o número de rexistros)
