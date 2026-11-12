@@ -40,6 +40,7 @@ branco sobre `acento` 5.0 · `titulo` sobre branco 7.8 · `titulo` sobre `banda`
 - O vermello do logo (corazón, `#e63946`) é parte do logo, non da interface: non se usa para nada máis.
 - Sobre fondo verde (menú, pé) o contorno de foco vai en `acento-claro` (3.1:1), porque `foco` non se vería (1.5:1):
   `focus-visible:outline-acento-claro`.
+- O marco do vídeo de Inicio mide `h-[60vh]` (60 % da altura da pantalla, acordado para esa páxina).
 
 ## 2. Tipografía
 
@@ -78,7 +79,8 @@ branco sobre `acento` 5.0 · `titulo` sobre branco 7.8 · `titulo` sobre `banda`
 | Principal (Gardar) | `bg-acento text-white hover:bg-acento-escuro` |
 | Secundario (Limpiar, PDF) | `bg-white text-acento border border-acento hover:bg-acento-suave` |
 | Perigo (Eliminar) | `bg-perigo text-white hover:brightness-90` — sempre separado dos outros |
-| Icona (🔍 🧹 ✏️ 🗑️) | cadrado `size-11 md:size-10`, `border border-borde`, icona SVG de 20 px |
+| Icona (🔍 🧹 ✏️) | cadrado `size-11 md:size-10`, `border border-borde`, icona SVG de 20 px |
+| Icona de borrar (🗑️ nas táboas) | igual, pero `border-perigo text-perigo hover:bg-perigo-suave` |
 
 Comúns: `px-5 rounded-md text-base font-semibold`.
 Desactivado: `disabled:bg-desactivado disabled:text-texto-desactivado disabled:cursor-not-allowed`.
@@ -113,7 +115,7 @@ Foco (teclado): `focus-visible:outline-3 focus-visible:outline-offset-2 focus-vi
 **Primeiro móbil** (como traballa Tailwind): as clases sen prefixo son para o teléfono; `md:` (desde 768 px) cambia o que faga falta para escritorio.
 Exemplo: `flex flex-col md:flex-row` = unha columna no móbil, fila no escritorio.
 
-- Ancho da páxina: o mesmo en todas.
+- Ancho da páxina: o mesmo en todas, máximo 1280 px (`max-w-7xl` no contedor de `App.vue`).
 - **Formularios:** no móbil, un campo por fila coa etiqueta enriba; desde `md`, as filas acordadas coa etiqueta á esquerda.
   Campos de formato fixo (DNI, ID, teléfono, data, selects, radios) con ancho fixo en escritorio; no móbil ocupan todo o ancho.
 - **Botóns de Gardar / Limpiar / Eliminar:** no móbil, un debaixo do outro e a todo o ancho, con Eliminar separado dos outros dous;

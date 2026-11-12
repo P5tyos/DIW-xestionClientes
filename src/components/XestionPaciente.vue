@@ -1,63 +1,65 @@
 <template>
-  <div class="xestion-pacientes">
-    <h3>👥  Xestión de pacientes</h3>
-    <form @submit.prevent="guardarPaciente">
-      <div class="fila">
-        <div class="campo campo-dni">
-          <label for="dni">DNI/NIE:<span class="obrigatorio" aria-hidden="true">*</span></label>
+  <TarxetaPanel etiqueta="div" class="w-full text-left">
+    <TituloSeccion><Users class="size-5" aria-hidden="true" /> Xestión de pacientes</TituloSeccion>
+
+    <form class="mb-8 flex flex-col gap-4" @submit.prevent="guardarPaciente">
+      <!-- validación: o erro aparece ao saír do campo (@blur); mentres hai erro, revalídase con cada tecla (@input)
+           e desaparece en canto o valor é correcto. O valor escrito nunca se borra -->
+
+      <!-- fila 1: DNI (+ 🔍 e 🧹), apelido e nome. No móbil, un campo por fila; desde md, en liña -->
+      <div class="flex flex-col gap-4 md:flex-row">
+        <CampoFormulario id="dni" etiqueta="DNI/NIE" obrigatorio :erro="documentoInvalido" class="md:w-auto" v-slot="{ clases }">
+          <!-- :disabled="editando" → cando cargamos un paciente (✏️ ou 🔍) o DNI vese pero non se pode cambiar; 🧹 desbloquéao -->
           <input
             id="dni"
             v-model="novoPaciente.dnipac"
             type="text"
             required
             autocomplete="off"
-            class="centrado"
-            :class="{ 'campo-erro': documentoInvalido }"
+            :class="[clases, 'text-center md:w-36']"
             :aria-invalid="documentoInvalido"
             aria-describedby="dni-erro"
             :disabled="editando"
             @blur="validarDocumento"
-            @input="documentoInvalido && validarDocumento()"/>
-          <!-- validación: o erro aparece ao saír do campo (@blur); mentres hai erro, revalídase con cada tecla (@input)
-               e desaparece en canto o valor é correcto. O valor escrito nunca se borra -->
-          <!-- :disabled="editando" → cando cargamos un paciente (✏️ ou 🔍) o DNI vese pero non se pode cambiar; 🧹 desbloquéao -->
-          <!-- type="button" para que non envíe o formulario ao pulsalo -->
+            @input="documentoInvalido && validarDocumento()"
+          />
           <!-- 🔍 tamén se bloquea mentres editamos: co DNI bloqueado só volvería cargar o mesmo paciente -->
-          <button type="button" @click="buscarPaciente" :disabled="editando" title="Buscar" aria-label="Buscar paciente por DNI">🔍</button>
-          <button type="button" @click="limparConConfirmacion" title="Limpar formulario" aria-label="Limpar formulario">🧹</button>
-        </div>
-        <div class="campo campo-apellido">
-          <label for="apelido">Apelido:<span class="obrigatorio" aria-hidden="true">*</span></label>
-          <input id="apelido" v-model="novoPaciente.apelpac" type="text" required autocomplete="family-name"
-          @blur="novoPaciente.apelpac = formatearNome(novoPaciente.apelpac)"/>
-        </div>
-        <div class="campo campo-nome">
-          <label for="nome">Nome:<span class="obrigatorio" aria-hidden="true">*</span></label>
-          <input id="nome" v-model="novoPaciente.nomepac" type="text" required autocomplete="given-name"
-          @blur="novoPaciente.nomepac = formatearNome(novoPaciente.nomepac)"/>
-        </div>
+          <BotonAccion variante="icona" class="shrink-0" :disabled="editando" title="Buscar" aria-label="Buscar paciente por DNI" @click="buscarPaciente">
+            <Search class="size-5" aria-hidden="true" />
+          </BotonAccion>
+          <BotonAccion variante="icona" class="shrink-0" title="Limpar formulario" aria-label="Limpar formulario" @click="limparConConfirmacion">
+            <BrushCleaning class="size-5" aria-hidden="true" />
+          </BotonAccion>
+        </CampoFormulario>
+        <CampoFormulario id="apelido" etiqueta="Apelido" obrigatorio class="md:flex-1" v-slot="{ clases }">
+          <input id="apelido" v-model="novoPaciente.apelpac" type="text" required autocomplete="family-name" :class="clases"
+            @blur="novoPaciente.apelpac = formatearNome(novoPaciente.apelpac)" />
+        </CampoFormulario>
+        <CampoFormulario id="nome" etiqueta="Nome" obrigatorio class="md:flex-1" v-slot="{ clases }">
+          <input id="nome" v-model="novoPaciente.nomepac" type="text" required autocomplete="given-name" :class="clases"
+            @blur="novoPaciente.nomepac = formatearNome(novoPaciente.nomepac)" />
+        </CampoFormulario>
       </div>
-      <div class="fila">
-        <div class="campo campo-nacimiento">
-          <label for="nacemento">Fecha nacemento:</label>
-          <input id="nacemento" v-model="novoPaciente.nacipac" type="date" autocomplete="bday" class="centrado" />
-        </div>
-        <div class="campo campo-correo">
-          <label for="correo">Correo:</label>
+
+      <!-- fila 2: data de nacemento, correo e teléfono -->
+      <div class="flex flex-col gap-4 md:flex-row">
+        <CampoFormulario id="nacemento" etiqueta="Fecha nacemento" class="md:w-44" v-slot="{ clases }">
+          <input id="nacemento" v-model="novoPaciente.nacipac" type="date" autocomplete="bday" :class="[clases, 'text-center']" />
+        </CampoFormulario>
+        <CampoFormulario id="correo" etiqueta="Correo" :erro="correoInvalido" class="md:flex-1" v-slot="{ clases }">
           <input
             id="correo"
             v-model="novoPaciente.mailpac"
             type="email"
             autocomplete="email"
-            :class="{ 'campo-erro': correoInvalido }"
+            :class="clases"
             :aria-invalid="correoInvalido"
             aria-describedby="correo-erro"
             @blur="validarCorreo"
             @input="correoInvalido && validarCorreo()"
           />
-        </div>
-        <div class="campo campo-telefono">
-          <label for="telefono">Telefono:<span class="obrigatorio" aria-hidden="true">*</span></label>
+        </CampoFormulario>
+        <CampoFormulario id="telefono" etiqueta="Telefono" obrigatorio :erro="telefonoIncorrecto" class="md:w-44" v-slot="{ clases }">
           <input
             id="telefono"
             v-model="novoPaciente.movilpac"
@@ -66,151 +68,166 @@
             required
             maxlength="9"
             autocomplete="tel"
-            class="centrado"
-            :class="{ 'campo-erro': telefonoIncorrecto }"
+            :class="[clases, 'text-center']"
             :aria-invalid="telefonoIncorrecto"
             aria-describedby="telefono-erro"
             @blur="validarTelefono"
             @input="telefonoIncorrecto && validarTelefono()"
           />
-        </div>
+        </CampoFormulario>
       </div>
-      <div class="fila">
-        <div class="campo">
-          <label for="direccion">Dirección:</label>
-          <input id="direccion" v-model="novoPaciente.dirpac" type="text" autocomplete="street-address" />
-        </div>
-        <div class="campo campo-provincia">
-          <label for="provincia">Provincia:</label>
+
+      <!-- fila 3: dirección, provincia e municipio (os selects con ancho fixo: non cambian ao elixir outra opción) -->
+      <div class="flex flex-col gap-4 md:flex-row">
+        <CampoFormulario id="direccion" etiqueta="Dirección" class="md:flex-1" v-slot="{ clases }">
+          <input id="direccion" v-model="novoPaciente.dirpac" type="text" autocomplete="street-address" :class="clases" />
+        </CampoFormulario>
+        <CampoFormulario id="provincia" etiqueta="Provincia" class="md:w-60" v-slot="{ clases }">
           <!-- @change: ao cambiar de provincia baleiramos o municipio (se non, quedaría gardado o da provincia anterior) e cargamos os novos municipios -->
-          <select id="provincia" v-model="novoPaciente.propac" @change="novoPaciente.munipac = ''; cargarMunicipios()">
+          <select id="provincia" v-model="novoPaciente.propac" :class="clases" @change="novoPaciente.munipac = ''; cargarMunicipios()">
             <option value="">Selecciona una provincia</option>
             <option v-for="provincia in provincias" :key="provincia.id" :value="provincia.nm">
               {{ provincia.nm }}
             </option>
           </select>
-        </div>
-        <div class="campo campo-municipio">
-          <label for="municipio">Municipio:</label>
-          <select id="municipio" v-model="novoPaciente.munipac">
+        </CampoFormulario>
+        <!-- municipio: o ancho colle o 99 % dos nomes; os ~20 máis longos córtanse só co select pechado -->
+        <CampoFormulario id="municipio" etiqueta="Municipio" class="md:w-64" v-slot="{ clases }">
+          <select id="municipio" v-model="novoPaciente.munipac" :class="clases">
             <option value="">Selecciona un municipio</option>
             <option v-for="municipio in municipios" :key="municipio.id" :value="municipio.nm">
               {{ municipio.nm }}
             </option>
           </select>
-        </div>
+        </CampoFormulario>
       </div>
-      <div class="fila fila-gardar">
-        <label>
-          <input v-model="novoPaciente.lopdpac" type="checkbox" />Acceptar a 
-          <a :href="$router.resolve({ name: 'PoliticaPrivacidad'}).href" target="_blank" rel="noopener noreferrer">
-            Politica de privacidade e confidencialidade.
-          </a>
+
+      <p class="text-right text-sm"><span class="text-perigo" aria-hidden="true">*</span> campo obrigatorio</p>
+
+      <!-- política de privacidade, erros e botóns, centrados -->
+      <div class="flex flex-col items-center gap-4">
+        <label class="flex items-start gap-2">
+          <input v-model="novoPaciente.lopdpac" type="checkbox" class="mt-1 size-5 shrink-0 accent-acento" />
+          <span>
+            Acceptar a
+            <a :href="$router.resolve({ name: 'PoliticaPrivacidad'}).href" target="_blank" rel="noopener noreferrer" class="underline">
+              Politica de privacidade e confidencialidade.
+            </a>
+          </span>
         </label>
 
-        <!-- Gardar e Eliminar na mesma liña -->
-        <!-- mensaxes de erro: xuntas enriba de Gardar (ao lado dos inputs non había sitio), cun exemplo válido.
-             Manteñen os id para que o aria-describedby de cada input siga apuntando á súa mensaxe -->
-        <div v-if="documentoInvalido || correoInvalido || telefonoIncorrecto" class="erros">
-          <p v-if="documentoInvalido" id="dni-erro" class="mensaxe-erro" role="alert">
+        <!-- mensaxes de erro: xuntas enriba de Gardar, cun exemplo válido.
+             Manteñen os id para que o aria-describedby de cada campo siga apuntando á súa mensaxe -->
+        <CaixaErros v-if="documentoInvalido || correoInvalido || telefonoIncorrecto">
+          <p v-if="documentoInvalido" id="dni-erro" role="alert">
             DNI/NIE non válido. Exemplo: 12345678Z ou X1234567L
           </p>
-          <p v-if="correoInvalido" id="correo-erro" class="mensaxe-erro" role="alert">
+          <p v-if="correoInvalido" id="correo-erro" role="alert">
             Correo non válido. Exemplo: usuario@exemplo.com
           </p>
-          <p v-if="telefonoIncorrecto" id="telefono-erro" class="mensaxe-erro" role="alert">
+          <p v-if="telefonoIncorrecto" id="telefono-erro" role="alert">
             Teléfono non válido: 9 cifras empezando por 6 ou 7. Exemplo: 612345678
           </p>
-        </div>
+        </CaixaErros>
 
-        <div class="botons-gardar">
-          <!-- un botón disabled non recibe eventos do rato, así que a axuda (motivoNonGardar)
-               móstrase ao pasar o rato por riba do span que o envolve -->
-          <span class="axuda-gardar" :data-axuda="motivoNonGardar">
-            <button
-              type="submit"
-              class="btn-guardar"
+        <!-- botóns: no móbil un debaixo do outro a todo o ancho; desde md en liña. Eliminar sempre separado -->
+        <div class="flex w-full flex-col gap-3 md:w-auto md:flex-row md:items-center">
+          <!-- axuda de Gardar ("Para gardar falta…"): un botón disabled non recibe o rato, así que o tooltip
+               móstrao o span que o envolve (group-hover), só en pantallas con rato (pointer-fine).
+               Sen rato (táctiles, só teclado) o texto vese debaixo dos botóns. Os lectores de pantalla len o texto
+               de abaixo grazas a aria-describedby (aínda que estea oculto) -->
+          <span class="group relative flex md:inline-flex" :class="motivoNonGardar ? 'cursor-not-allowed' : ''">
+            <BotonAccion
+              tipo="submit"
+              class="w-full disabled:pointer-events-none md:w-auto"
               :disabled="motivoNonGardar !== ''"
+              :aria-describedby="motivoNonGardar ? 'axuda-gardar' : undefined"
             >
               Gardar
-            </button>
+            </BotonAccion>
+            <span
+              v-if="motivoNonGardar"
+              class="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 hidden -translate-x-1/2 rounded-md bg-titulo px-3 py-2 text-sm whitespace-nowrap text-white pointer-fine:group-hover:block"
+              aria-hidden="true"
+            >
+              {{ motivoNonGardar }}
+            </span>
           </span>
           <!-- Limpiar ao lado de Gardar (onde xa está a man); fai o mesmo que 🧹 -->
-          <button type="button" class="btn-limpar" @click="limparConConfirmacion">Limpiar</button>
-          <!-- Eliminar só aparece cando hai un paciente cargado no formulario (✏️ ou 🔍);
-               type="button" para que non envíe o formulario (se non, tamén gardaría) -->
-          <button
+          <BotonAccion variante="secundario" class="w-full md:w-auto" @click="limparConConfirmacion">Limpiar</BotonAccion>
+          <!-- Eliminar só aparece cando hai un paciente cargado (✏️ ou 🔍); separado dos outros para non premelo sen querer -->
+          <BotonAccion
             v-if="editando"
-            type="button"
-            class="btn-eliminar"
+            variante="perigo"
+            class="mt-4 w-full md:mt-0 md:ml-10 md:w-auto"
             title="Eliminar"
             :disabled="gardando"
             @click="eliminarPacienteCargado"
           >
             Eliminar
-          </button>
+          </BotonAccion>
         </div>
-
-        <p class="nota-obrigatorio"><span aria-hidden="true">*</span> campo obrigatorio</p>
+        <!-- texto da axuda debaixo dos botóns: visible por defecto (táctiles, só teclado…) e oculto só cando hai rato
+             (pointer-fine), onde xa sae o tooltip. Os lectores de pantalla léno sempre (aria-describedby) -->
+        <p v-if="motivoNonGardar" id="axuda-gardar" class="text-sm pointer-fine:hidden">{{ motivoNonGardar }}</p>
       </div>
     </form>
+
     <!-- título da listaxe co botón para xerar o PDF da listaxe (filtrada) -->
-    <div class="cabecera-listado">
-      <h3>📋 Listaxe de pacientes</h3>
-      <button
-        type="button"
-        class="btn-pdf"
-        :disabled="pacientesFiltrados.length === 0"
-        @click="exportarPacientes"
-      >
-        🖨️ PDF
-      </button>
-    </div>
+    <TituloSeccion>
+      <ClipboardList class="size-5" aria-hidden="true" /> Listaxe de pacientes
+      <template #accion>
+        <BotonAccion variante="secundario" :disabled="pacientesFiltrados.length === 0" @click="exportarPacientes">
+          <Printer class="size-5" aria-hidden="true" /> PDF
+        </BotonAccion>
+      </template>
+    </TituloSeccion>
     <!-- mentres non se edita, o que se escribe no formulario filtra a táboa -->
-    <p v-if="filtroActivo" class="info-filtro">
+    <p v-if="filtroActivo" class="mb-2 text-sm italic">
       Mostrando {{ pacientesFiltrados.length }} de {{ pacientes.length }} pacientes (filtrados polo formulario)
     </p>
-    <table v-if="pacientesFiltrados.length > 0">
-      <caption>Listaxe de pacientes</caption>
-      <thead>
-        <tr>
-          <th scope="col">#</th>
-          <th scope="col">DNI/NIE</th>
-          <th scope="col">Apelido</th>
-          <th scope="col">Nome</th>
-          <th scope="col">Fecha nacemento</th>
-          <th scope="col">Telefono</th>
-          <th scope="col">Correo</th>
-          <th scope="col">Dirección</th>
-          <th scope="col">Provincia</th>
-          <th scope="col">Municipio</th>
-          <th scope="col">Accións</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="(p, index) in pacientesFiltrados" :key="p._id">
-          <!-- números (nº, DNI, data, teléfono) centrados; o texto queda á esquerda -->
-          <td class="centrado">{{ index + 1 }}</td>
-          <td class="centrado">{{ p.dnipac }}</td>
-          <td>{{ p.apelpac }}</td>
-          <td>{{ p.nomepac }}</td>
-          <td class="centrado">{{ p.nacipac }}</td>
-          <td class="centrado">{{ p.movilpac }}</td>
-          <td>{{ p.mailpac }}</td>
-          <td>{{ p.dirpac }}</td>
-          <td>{{ p.propac }}</td>
-          <td>{{ p.munipac }}</td>
-          <td class="centrado">
-            <!-- pacientes.indexOf(p): a posición na listaxe completa (co filtro, o index da fila non é o mesmo) -->
-            <button @click="editarUsuario(pacientes.indexOf(p))" title="Editar" :aria-label="`Editar a ${p.nomepac} ${p.apelpac}`">✏️</button>
-            <button @click="eliminarPaciente(pacientes.indexOf(p))" title="Eliminar" :aria-label="`Eliminar a ${p.nomepac} ${p.apelpac}`">🗑️</button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+    <!-- no móbil a táboa desprázase en horizontal dentro do seu contedor (non a páxina enteira) -->
+    <div v-if="pacientesFiltrados.length > 0" class="overflow-x-auto">
+      <table class="w-full border-collapse text-sm">
+        <caption class="sr-only">Listaxe de pacientes</caption>
+        <thead class="bg-acento-suave text-titulo">
+          <tr>
+            <th v-for="cabeceira in cabeceiras" :key="cabeceira" scope="col" class="border border-acento-claro p-3 font-semibold">
+              {{ cabeceira }}
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="(p, index) in pacientesFiltrados" :key="p._id" class="bg-white">
+            <!-- números (nº, DNI, data, teléfono) centrados; o texto á esquerda -->
+            <td class="border border-acento-claro p-3 text-center">{{ index + 1 }}</td>
+            <td class="border border-acento-claro p-3 text-center">{{ p.dnipac }}</td>
+            <td class="border border-acento-claro p-3">{{ p.apelpac }}</td>
+            <td class="border border-acento-claro p-3">{{ p.nomepac }}</td>
+            <td class="border border-acento-claro p-3 text-center">{{ p.nacipac }}</td>
+            <td class="border border-acento-claro p-3 text-center">{{ p.movilpac }}</td>
+            <td class="border border-acento-claro p-3">{{ p.mailpac }}</td>
+            <td class="border border-acento-claro p-3">{{ p.dirpac }}</td>
+            <td class="border border-acento-claro p-3">{{ p.propac }}</td>
+            <td class="border border-acento-claro p-3">{{ p.munipac }}</td>
+            <td class="border border-acento-claro p-3">
+              <!-- pacientes.indexOf(p): a posición na listaxe completa (co filtro, o index da fila non é o mesmo) -->
+              <div class="flex justify-center gap-2">
+                <BotonAccion variante="icona" title="Editar" :aria-label="`Editar a ${p.nomepac} ${p.apelpac}`" @click="editarUsuario(pacientes.indexOf(p))">
+                  <Pencil class="size-4" aria-hidden="true" />
+                </BotonAccion>
+                <BotonAccion variante="icona-perigo" title="Eliminar" :aria-label="`Eliminar a ${p.nomepac} ${p.apelpac}`" @click="eliminarPaciente(pacientes.indexOf(p))">
+                  <Trash2 class="size-4" aria-hidden="true" />
+                </BotonAccion>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
     <p v-else-if="filtroActivo">Ningún paciente coincide co filtro.</p>
     <p v-else>Non hai pacientes cargados.</p>
-  </div>
+  </TarxetaPanel>
 </template>
 
 <script setup>
@@ -235,6 +252,15 @@ import {
   alertaEliminar
 } from '../utils/alertas.js'
 import { generarPDF } from "../utils/pdf.js";
+import { Users, ClipboardList, Search, BrushCleaning, Printer, Pencil, Trash2 } from "lucide-vue-next";
+import TarxetaPanel from "./comun/TarxetaPanel.vue";
+import TituloSeccion from "./comun/TituloSeccion.vue";
+import CampoFormulario from "./comun/CampoFormulario.vue";
+import CaixaErros from "./comun/CaixaErros.vue";
+import BotonAccion from "./comun/BotonAccion.vue";
+
+// cabeceiras da táboa (así o <th> escríbese unha soa vez)
+const cabeceiras = ["#", "DNI/NIE", "Apelido", "Nome", "Fecha nacemento", "Telefono", "Correo", "Dirección", "Provincia", "Municipio", "Accións"];
 import { usePacienteStore } from "../store/pacienteStore.js";
 
 const pacientes = ref([]); //almacena la lista de pacientes e os seus cambios
@@ -652,339 +678,3 @@ function formatearNome(valor) {
 </script>
 
 <!--XXXXXXXXXXXXXXXXXXXXXX  ZONA DE ESTILOS  XXXXXXXXXXXXXXXXXXXXXXXX -->
-
-<style scoped>
-.xestion-pacientes {
-  width: 100%;
-  text-align: left; /* #app centra todo; aquí o texto vai á esquerda (táboa incluída) */
-  background: white;
-  padding: 2rem;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  box-sizing: border-box;
-}
-
-h3 {
-  margin-bottom: 1rem;
-  font-weight: 600;
-  background-color: var(--heading-bg);
-  color: var(--text-h); /* texto escuro: o branco sobre este verde só tiña contraste 2:1 */
-  text-align: center;
-}
-
-/* título da listaxe co botón do PDF ao lado */
-.cabecera-listado {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 1rem;
-}
-
-.cabecera-listado h3 {
-  flex: 1;
-  margin: 0;
-}
-
-.btn-pdf {
-  background-color: var(--accent);
-  color: white;
-  border: none;
-  padding: 0.4rem 1rem;
-  cursor: pointer;
-}
-
-.btn-pdf:hover:enabled {
-  background-color: var(--accent-dark);
-}
-
-.btn-pdf:disabled {
-  background-color: #e0e0e0;
-  color: #999;
-  cursor: not-allowed;
-}
-
-.info-filtro {
-  font-size: 0.85rem;
-  font-style: italic;
-}
-
-/* ---------- formulario ---------- */
-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  margin-bottom: 2rem;
-}
-
-.fila {
-  display: flex;
-  gap: 1rem;
-}
-
-/* label e input na mesma liña; por defecto cada campo ocupa 1 parte da fila */
-.campo {
-  flex: 1;
-  min-width: 0; /* deixa encoller o campo e o seu input (por defecto un input mide ~20 caracteres) para que a fila non se saia do panel */
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-/* campos máis anchos */
-.campo-nome,
-.campo-apellido {
-  flex: 3;
-}
-
-/* DNI: só o ancho que precisa (9 caracteres), o resto da fila queda para nome e apelido */
-.campo-dni {
-  flex: 0 0 auto;
-}
-
-.campo-dni input {
-  flex: none;
-  width: 9em;
-}
-
-/* teléfono (9 cifras) e data: ancho fixo, non encollen; o espazo que sobra vai para os campos de texto */
-.campo-telefono,
-.campo-nacimiento {
-  flex: 0 0 auto;
-}
-
-.campo-telefono input {
-  flex: none;
-  width: 11em; /* sitio para 13 caracteres (prefixo internacional: 0034612345678) */
-}
-
-.campo-nacimiento input {
-  flex: none;
-}
-
-.campo-correo {
-  flex: 2;
-}
-
-/* os selectores só ocupan o que miden, o resto queda para a dirección */
-.campo-provincia,
-.campo-municipio {
-  flex: 0 0 auto;
-  padding: 0.5rem 0;
-}
-
-/* ancho fixo para que o select non cambie de tamaño ao elixir outra opción */
-
-/* provincia: cabe o texto máis longo ("Selecciona una provincia") */
-#provincia {
-  width: 14.5em;
-}
-
-/* municipio: cabe o 99% dos nomes; os ~20 máis longos (ex. "San Vicente del Raspeig/Sant Vicent del Raspeig")
-   córtanse só co select pechado, na lista despregada vense enteiros */
-#municipio {
-  width: 16em;
-}
-
-.campo label {
-  min-width: 80px; /* ancho fixo para aliñar */
-  font-weight: 500;
-}
-
-.campo-nacimiento label {
-  white-space: nowrap;
-}
-
-.campo input {
-  flex: 1;
-  min-width: 0;
-  padding: 0.5rem;
-  border: 1px solid #767676; /* contraste mínimo 3:1 para que se vexa o campo */
-  border-radius: 6px;
-  box-sizing: border-box;
-}
-
-/* os select coa mesma altura que os input */
-.campo select {
-  padding: 0.5rem;
-}
-
-/* botóns de icona (🔍 🧹 ✏️ 🗑️): mesmo ancho, e o alto igual ao ancho (cadrados) */
-.campo button,
-td button {
-  aspect-ratio: 1;
-  box-sizing: border-box;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* ---------- validación ---------- */
-/* input con erro: borde vermello máis marcado. O box-shadow engrosa o borde sen cambiar
-   o tamaño do input (un border máis groso movería os campos da fila) */
-input.campo-erro {
-  border-color: #b00020;
-  box-shadow: 0 0 0 2px #b00020;
-  background-color: #ffe6e6;
-}
-
-/* caixa coas mensaxes de erro, enriba dos botóns */
-.erros {
-  padding: 0.4rem 1rem;
-  border-left: 4px solid #b00020;
-  background-color: #ffe6e6;
-}
-
-.mensaxe-erro {
-  margin: 0.2rem 0;
-  font-size: 0.85rem;
-  color: #b00020;
-}
-
-/* asterisco de campo obrigatorio */
-.obrigatorio {
-  color: #b00020;
-  margin-left: 0.15rem;
-}
-
-/* ---------- fila de gardar: checkbox enriba do botón, centrados; nota á dereita ---------- */
-.fila-gardar {
-  position: relative;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.btn-guardar {
-  background-color: var(--accent);
-  color: white;
-  border: none;
-  padding: 0.4rem 1.5rem;
-  cursor: pointer;
-}
-
-.btn-guardar:hover:enabled {
-  background-color: var(--accent-dark);
-}
-
-/* Gardar e Eliminar un ao lado do outro */
-.botons-gardar {
-  display: flex;
-  gap: 1rem;
-}
-
-/* Eliminar: mesma forma que Gardar, en vermello (texto branco con contraste 5:1) */
-/* Limpiar: botón secundario (borde verde, fondo branco) para que non se confunda con Gardar */
-.btn-limpar {
-  background-color: white;
-  color: var(--accent);
-  border: 1px solid var(--accent);
-  padding: 0.4rem 1.5rem;
-  cursor: pointer;
-}
-
-.btn-limpar:hover {
-  background-color: var(--accent-soft);
-}
-
-/* Eliminar: terceiro botón, cun espazo maior antes para non premelo sen querer */
-.btn-eliminar {
-  margin-left: 2.5rem;
-  background-color: var(--danger);
-  color: white;
-  border: none;
-  padding: 0.4rem 1.5rem;
-  cursor: pointer;
-}
-
-.btn-eliminar:disabled {
-  opacity: 0.6;
-  cursor: wait;
-}
-
-.btn-eliminar:hover:enabled {
-  background-color: #9a3b3b;
-}
-
-.btn-guardar:disabled {
-  background-color: #e0e0e0;
-  color: #999;
-  opacity: 0.7;
-  pointer-events: none; /* o rato "atravesa" o botón desactivado e chega ao span, que mostra a axuda */
-}
-
-/* axuda de Gardar: caixa escura enriba do botón, só cando hai motivo (data-axuda non baleiro) */
-.axuda-gardar {
-  position: relative;
-  display: inline-block;
-}
-
-.axuda-gardar:not([data-axuda=""]) {
-  cursor: not-allowed;
-}
-
-.axuda-gardar:not([data-axuda=""]):hover::after {
-  content: attr(data-axuda);
-  position: absolute;
-  bottom: calc(100% + 6px);
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 10;
-  padding: 0.4rem 0.7rem;
-  border-radius: 4px;
-  background-color: var(--text-h);
-  color: white;
-  font-size: 0.8rem;
-  white-space: nowrap;
-}
-
-.nota-obrigatorio {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  margin: 0;
-  font-size: 0.7rem;
-}
-
-/* ---------- táboa ---------- */
-table {
-  width: 100%;
-  margin-top: 1rem;
-  font-size: 0.8rem;
-  border: 1px solid var(--border);
-}
-
-th,
-td {
-  border: 1px solid var(--border);
-  padding: 0.7rem;
-}
-
-th {
-  background-color: var(--accent-soft);
-}
-
-td:last-child {
-  white-space: nowrap;
-}
-
-/* o caption só o len os lectores de pantalla (xa hai un título visible enriba) */
-caption {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
-}
-
-@media (max-width: 768px) {
-  .xestion-pacientes {
-    padding: 1rem;
-  }
-
-  /* apila os campos verticalmente en móbiles */
-  .fila {
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-}
-</style>

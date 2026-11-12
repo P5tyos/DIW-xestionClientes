@@ -1,14 +1,16 @@
 <template>
-  <div class="inicio">
+  <div class="w-full px-4 py-8 text-left md:px-8 md:py-12">
     <!-- vídeo de portada: só imaxe, sen texto enriba; o contido da páxina vai debaixo -->
-    <figure class="video-portada">
-      <div class="video-marco">
+    <figure class="mb-8">
+      <!-- marco do vídeo: 60 % da altura da pantalla, así debaixo aínda asoma o contido
+           (h-[60vh] é un valor acordado para esta páxina, excepción á regra de non inventar valores) -->
+      <div class="relative h-[60vh] min-h-60 overflow-hidden rounded-xl bg-titulo shadow-md">
         <!-- vídeo decorativo: sen son, en bucle; aria-hidden porque non transmite información.
              Sen "autoplay": arráncase desde o script só se o usuario non pediu "movemento reducido".
              preload="none": a quen non o reproduce non se lle descarga, só ve o póster -->
         <video
           ref="video"
-          class="video"
+          class="block size-full object-cover"
           muted
           loop
           playsinline
@@ -25,65 +27,82 @@
         <!-- botón para parar/continuar o vídeo (WCAG 2.2.2: o que se move máis de 5 s ten que poder pararse) -->
         <button
           type="button"
-          class="boton-video"
+          class="absolute right-3 bottom-3 inline-flex size-11 items-center justify-center rounded-full border border-white/60 bg-black/45 text-white hover:bg-black/70 focus-visible:outline-acento-claro"
           :aria-label="enPausa ? 'Reproducir o vídeo' : 'Pausar o vídeo'"
           :title="enPausa ? 'Reproducir vídeo' : 'Pausar vídeo'"
           @click="alternarVideo"
         >
-          {{ enPausa ? "▶" : "⏸" }}
+          <Play v-if="enPausa" class="size-5" aria-hidden="true" />
+          <Pause v-else class="size-5" aria-hidden="true" />
         </button>
       </div>
 
-      <!-- crédito do vídeo (licenza Pexels: non obrigatorio, pero boa práctica). Detalles en public/video/CREDITOS.txt -->
-      <figcaption class="credito-video">
-        Vídeo: <a href="https://www.pexels.com/es-es/@mikhail-nilov/" target="_blank" rel="noopener noreferrer">Mikhail Nilov</a>
-        e outros autores de <a href="https://www.pexels.com" target="_blank" rel="noopener noreferrer">Pexels</a>
+      <!-- crédito do vídeo (licenza Pexels: non obrigatorio, pero boa práctica). Detalles en public/video/CREDITOS.txt.
+           Vai sobre unha etiqueta clara para que se lea encima da imaxe de fondo -->
+      <figcaption class="mt-2 text-right text-sm">
+        <span class="rounded-md bg-white/90 px-2 py-1">
+          Vídeo: <a href="https://www.pexels.com/es-es/@mikhail-nilov/" target="_blank" rel="noopener noreferrer" class="underline">Mikhail Nilov</a>
+          e outros autores de <a href="https://www.pexels.com" target="_blank" rel="noopener noreferrer" class="underline">Pexels</a>
+        </span>
       </figcaption>
     </figure>
 
-    <section class="hero">
-      <h1>Bienvenido a Sanidad Teis</h1>
-      <p class="subtitulo">Tu centro de salud de confianza en el barrio de Teis</p>
-      <p>
+    <!-- presentación -->
+    <TarxetaPanel class="mx-auto mb-10 max-w-3xl text-center">
+      <h1 class="mb-4 text-4xl leading-tight font-semibold text-titulo">Bienvenido a Sanidad Teis</h1>
+      <p class="mb-4 text-xl font-semibold text-acento">Tu centro de salud de confianza en el barrio de Teis</p>
+      <p class="leading-relaxed">
         En Sanidad Teis ofrecemos atención médica cercana, profesional y accesible
         para toda la familia. Contamos con un equipo comprometido con tu bienestar
         y con las últimas herramientas digitales para facilitar la gestión de tus
         datos y citas.
       </p>
+    </TarxetaPanel>
+
+    <!-- accesos rápidos: unha columna no móbil, tres desde md -->
+    <section class="mb-10 grid gap-6 md:grid-cols-3">
+      <TarxetaPanel v-for="tarxeta in tarxetas" :key="tarxeta.ruta" etiqueta="div" class="flex flex-col items-start">
+        <h2 class="mb-2 text-2xl font-semibold text-titulo">{{ tarxeta.titulo }}</h2>
+        <p class="mb-4 flex-1 leading-relaxed">{{ tarxeta.texto }}</p>
+        <!-- motion-safe: o pequeno salto ao pasar o rato só para quen non pediu "movemento reducido" -->
+        <BotonAccion :to="tarxeta.ruta" class="motion-safe:transition motion-safe:hover:-translate-y-0.5">
+          {{ tarxeta.boton }}
+        </BotonAccion>
+      </TarxetaPanel>
     </section>
 
-    <section class="accesos-rapidos">
-      <div class="tarjeta">
-        <h2>Gestión de Pacientes</h2>
-        <p>Consulta, registra o modifica tus datos médicos.</p>
-        <router-link to="/xestion-pacientes">Acceder</router-link>
-      </div>
-      <div class="tarjeta">
-        <h2>Sobre Nosotros</h2>
-        <p>Conoce nuestro equipo y nuestra misión.</p>
-        <router-link to="/sobrenos">Ver más</router-link>
-      </div>
-      <div class="tarjeta">
-        <h2>Aviso Legal</h2>
-        <p>Información sobre privacidad y condiciones de uso.</p>
-        <router-link to="/avisolegal">Consultar</router-link>
-      </div>
-    </section>
-
-    <section class="info-contacto">
-      <h2>Información de contacto</h2>
-      <ul>
-        <li><strong>Horario:</strong> Lunes a Viernes, 8:00 - 20:00</li>
-        <li><strong>Dirección:</strong> Rúa de Eduardo Cabello, 12, 36216 Vigo, Pontevedra</li>
-        <li><strong>Teléfono:</strong> 986 45 12 30</li>
-        <li><strong>Email:</strong> info@sanidadteis.gal</li>
+    <!-- contacto: unha columna no móbil, dúas desde md -->
+    <TarxetaPanel class="mx-auto max-w-3xl">
+      <h2 class="mb-4 text-2xl font-semibold text-titulo">Información de contacto</h2>
+      <ul class="grid gap-x-8 gap-y-3 leading-normal md:grid-cols-2">
+        <li v-for="dato in contacto" :key="dato.nome">
+          <strong class="font-semibold text-titulo">{{ dato.nome }}:</strong> {{ dato.valor }}
+        </li>
       </ul>
-    </section>
+    </TarxetaPanel>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from "vue";
+import { Play, Pause } from "lucide-vue-next";
+import TarxetaPanel from "./comun/TarxetaPanel.vue";
+import BotonAccion from "./comun/BotonAccion.vue";
+
+// tarxetas de acceso rápido (así o HTML da tarxeta escríbese unha soa vez)
+const tarxetas = [
+  { titulo: "Gestión de Pacientes", texto: "Consulta, registra o modifica tus datos médicos.", ruta: "/xestion-pacientes", boton: "Acceder" },
+  { titulo: "Sobre Nosotros", texto: "Conoce nuestro equipo y nuestra misión.", ruta: "/sobrenos", boton: "Ver más" },
+  { titulo: "Aviso Legal", texto: "Información sobre privacidad y condiciones de uso.", ruta: "/avisolegal", boton: "Consultar" },
+];
+
+// datos de contacto
+const contacto = [
+  { nome: "Horario", valor: "Lunes a Viernes, 8:00 - 20:00" },
+  { nome: "Dirección", valor: "Rúa de Eduardo Cabello, 12, 36216 Vigo, Pontevedra" },
+  { nome: "Teléfono", valor: "986 45 12 30" },
+  { nome: "Email", valor: "info@sanidadteis.gal" },
+];
 
 const video = ref(null);   // o elemento <video> da portada
 const enPausa = ref(true); // empeza parado ata que se arranca (ou non) en onMounted
@@ -114,183 +133,3 @@ function alternarVideo() {
   }
 }
 </script>
-
-<style scoped>
-.inicio {
-  width: min(1120px, 100%);
-  margin: 0 auto;
-  padding: clamp(2rem, 5vw, 4.5rem) clamp(1rem, 4vw, 3rem);
-  box-sizing: border-box;
-}
-
-/* ---------- vídeo de portada ---------- */
-.video-portada {
-  margin: 0 0 2rem;
-}
-
-/* marco do vídeo: 60 % da altura da pantalla, así debaixo aínda asoma o principio do contido */
-.video-marco {
-  position: relative; /* para colocar o botón ⏸/▶ dentro */
-  height: 60vh;
-  min-height: 240px;
-  overflow: hidden;   /* o vídeo non sae das esquinas redondeadas */
-  border-radius: 18px;
-  background: var(--text-h); /* cor de reserva mentres non hai póster/vídeo */
-  box-shadow: var(--shadow);
-}
-
-.video {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover; /* enche o marco sen deformarse (recorta o que sobra) */
-}
-
-/* botón ⏸/▶: redondo, abaixo á dereita do vídeo */
-.boton-video {
-  position: absolute;
-  right: 0.8rem;
-  bottom: 0.8rem;
-  width: 2.4rem;
-  height: 2.4rem;
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.45);
-  color: white;
-  font-size: 1rem;
-  cursor: pointer;
-}
-
-.boton-video:hover {
-  background: rgba(0, 0, 0, 0.7);
-}
-
-.boton-video:focus-visible {
-  outline: 3px solid var(--accent-light);
-  outline-offset: 2px;
-}
-
-/* crédito do vídeo: pequeno, debaixo do vídeo á dereita */
-.credito-video {
-  margin-top: 0.4rem;
-  font-size: 0.75rem;
-  text-align: right;
-}
-
-/* ---------- presentación (como antes) ---------- */
-.hero {
-  max-width: 760px;
-  margin: 0 auto 2.5rem;
-  padding: clamp(1.75rem, 4vw, 3.5rem);
-  text-align: center;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 18px;
-  box-shadow: var(--shadow);
-}
-
-.hero h1 {
-  margin: 0 0 1rem;
-  color: var(--text-h);
-  font-size: clamp(2.1rem, 5vw, 3.8rem);
-  line-height: 1.08;
-}
-
-.hero p {
-  line-height: 1.7;
-}
-
-.hero .subtitulo {
-  margin-bottom: 1rem;
-  color: var(--accent-dark);
-  font-size: 1.15rem;
-  font-weight: 600;
-}
-
-.accesos-rapidos {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1.25rem;
-  margin-bottom: 2.5rem;
-}
-
-.tarjeta,
-.info-contacto {
-  padding: 1.5rem;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  box-shadow: 0 10px 25px rgba(29, 59, 44, 0.08);
-}
-
-.tarjeta {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  min-height: 185px;
-}
-
-.tarjeta h2,
-.info-contacto h2 {
-  margin-top: 0;
-  color: var(--text-h);
-}
-
-.tarjeta p {
-  flex: 1;
-  line-height: 1.6;
-}
-
-.tarjeta a {
-  display: inline-block;
-  margin-top: 1rem;
-  padding: 0.65rem 1rem;
-  color: white;
-  background: var(--accent);
-  border-radius: 6px;
-  text-decoration: none;
-  font-weight: 600;
-}
-
-.tarjeta a:hover {
-  background: var(--accent-dark);
-}
-
-/* a animación só para quen non desactivou o movemento no seu sistema */
-@media (prefers-reduced-motion: no-preference) {
-  .tarjeta a {
-    transition: background 0.2s ease, transform 0.2s ease;
-  }
-
-  .tarjeta a:hover {
-    transform: translateY(-2px);
-  }
-}
-
-.info-contacto {
-  max-width: 720px;
-  margin: 0 auto;
-}
-
-.info-contacto ul {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.75rem 2rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  line-height: 1.5;
-}
-
-.info-contacto strong {
-  color: var(--text-h);
-}
-
-@media (max-width: 768px) {
-  .accesos-rapidos,
-  .info-contacto ul {
-    grid-template-columns: 1fr;
-  }
-}
-
-</style>
