@@ -42,6 +42,7 @@
             aria-describedby="telefono-erro"
             @blur="validarTelefono"
             @input="telefonoIncorrecto && validarTelefono()"
+            @keydown.tab="cargarSeUnico"
           />
         </CampoFormulario>
         <CampoFormulario id="correo" etiqueta="Correo" :erro="correoInvalido" class="md:flex-1" v-slot="{ clases }">
@@ -408,6 +409,13 @@ async function editarDoctor(index) {
     return;
   }
   cargarNoFormulario(doctores.value[index]);
+}
+
+// Tab no campo DNI o tel: se o filtro deixa un só paciente na táboa, cárgao no formulario
+function cargarSeUnico() {
+  if (!editando.value && filtroActivo.value && doctoresFiltrados.value.length === 1) {
+    cargarNoFormulario(doctoresFiltrados.value[0]);
+  }
 }
 
 // carga un doctor no formulario en modo edición e selecciónao para Citas (úsano ✏️ e recuperarSeleccionado)

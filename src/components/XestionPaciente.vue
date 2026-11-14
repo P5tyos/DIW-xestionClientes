@@ -23,6 +23,7 @@
             :disabled="editando"
             @blur="validarDocumento"
             @input="documentoInvalido && validarDocumento()"
+            @keydown.tab="cargarSeUnico"
           />
           <!-- 🔍 tamén se bloquea mentres editamos: co DNI bloqueado só volvería cargar o mesmo paciente -->
           <BotonAccion variante="icona" class="shrink-0" :disabled="editando" title="Buscar" aria-label="Buscar paciente por DNI" @click="buscarPaciente">
@@ -74,6 +75,7 @@
             aria-describedby="telefono-erro"
             @blur="validarTelefono"
             @input="telefonoIncorrecto && validarTelefono()"
+            @keydown.tab="cargarSeUnico"
           />
         </CampoFormulario>
       </div>
@@ -472,6 +474,13 @@ async function editarUsuario(index){
     return;
   }
   await cargarNoFormulario(pacientes.value[index]);
+}
+
+// Tab no campo DNI o tel: se o filtro deixa un só paciente na táboa, cárgao no formulario
+function cargarSeUnico() {
+  if (!editando.value && filtroActivo.value && pacientesFiltrados.value.length === 1) {
+    cargarNoFormulario(pacientesFiltrados.value[0]);
+  }
 }
 
 // carga un paciente no formulario en modo edición e selecciónao para Citas (úsano ✏️, 🔍 e recuperarSeleccionado)

@@ -1,3 +1,7 @@
+<!-- eslint-disable vue/html-self-closing -->
+<!-- eslint-disable vue/singleline-html-element-content-newline -->
+<!-- eslint-disable vue/attributes-order -->
+<!-- eslint-disable vue/max-attributes-per-line -->
 <template>
   <!-- rounded-t-none: as esquinas de arriba rectas, para que o panel quede pegado ao menú sen oco -->
   <TarxetaPanel etiqueta="div" class="w-full rounded-t-none text-left">
@@ -79,6 +83,7 @@
             <option value="pendente">Pendente</option>
             <option value="realizada">Realizada</option>
             <option value="cancelada">Cancelada</option>
+            <option value="borrada">Borrada</option>  <!-- filter step1 added new option -->
           </select>
         </CampoFormulario>
       </div>
@@ -131,6 +136,8 @@
     </p>
     <template v-else>
       <p class="mb-2 text-sm italic">Citas de {{ pacienteStore.nomepac }} {{ pacienteStore.apelpac }} ({{ pacienteStore.dnipac }})</p>
+     
+      <label class="mb-2 flex items-center gap-2 text-sm"><input v-model="mostrarBorradas" type="checkbox" /> Mostrar as citas borradas </label> <!-- Filter Step 2.3 creates the checkbox-->
       <!-- no móbil a táboa desprázase en horizontal dentro do seu contedor (non a páxina enteira) -->
       <div v-if="citasPaciente.length > 0" class="overflow-x-auto">
         <table class="w-full border-collapse text-sm">
@@ -197,6 +204,7 @@ const doctorStore = useDoctorStore();
 const citas = ref([]); // todas as citas da BD (na táboa só se ven as do paciente seleccionado)
 const gardando = ref(false); // bloquea Gardar mentres se envía a cita
 const editando = ref(false); // true cando hai unha cita cargada (✏️): Gardar modifícaa en vez de crear outra
+const mostrarBorradas = ref(false); // filtrar step 2.1 variable for the checkbox =>  true = a táboa tamén mostra as citas borradas 
 
 // campos da cita que se editan no formulario
 const CAMPOS = ["fecha", "hora", "motivo", "estado", "observacions"];
@@ -219,6 +227,7 @@ const citasPaciente = computed(() =>
   citas.value
     .filter((c) => c.dnipac === pacienteStore.dnipac)
     .sort((a, b) => (a.fecha + a.hora).localeCompare(b.fecha + b.hora))
+    .filter((c) => mostrarBorradas.value || c.estado !== "borrada")  // filter step 2.2 goes through a list and keeps only the items that pass a test. now incl. the new variable too
 );
 
 // por que non se pode gardar aínda ("" se xa se pode); móstrase como axuda sobre o botón
@@ -373,4 +382,19 @@ async function confirmarDescartar() {
 function formatearData(data) {
   return data ? data.split("-").reverse().join("/") : "";
 }
+/* if i had to filter in text insted of a checkbox, it would be similar. 
+first add a ref variable that makes the page rework itself when value changes:
+    const buscar = ref(""); // o que se escribe na caixa de busca
+
+Then normalize the value of the input and add it to a filter:
+    .filter((c) => c.motivo.toLowerCase().includes(buscar.value.toLowerCase()))
+also adjust the input type: 
+    <input v-model="buscar" type="text" placeholder="Buscar por motivo" />
+
+in case of a input type="select" 
+    .filter((c) => filtroEstado.value === "" || c.estado === filtroEstado.value)
+ */
+
 </script>
+
+
