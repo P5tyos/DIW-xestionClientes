@@ -61,6 +61,7 @@ const aberto = ref(false); // menú do móbil aberto ou pechado
 // as páxinas do menú (así o <li> escríbese unha soa vez)
 const ligazons = [
   { ruta: "/", texto: "Inicio" },
+  { ruta: "/servicios-medicos", texto: "Servicios Medicos" },  //step 3.1 add it to the navbar
   { ruta: "/xestion-pacientes", texto: "Pacientes" },
   { ruta: "/xestion-doctores", texto: "Doctores" },
   { ruta: "/xestion-citas", texto: "Citas" },
