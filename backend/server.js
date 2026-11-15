@@ -53,6 +53,21 @@ app.get('/api/especialidades', (req, res) => {
     res.json(datosJson)
 })
 
+// XXXXXXXXXX step1: create tarifas.json step2: this step: load in the data from Json and transform it into a JS object XXXXXXXXXXXX
+//ruta de la api para obtener TARIFAS
+app.get('/api/tarifas', (req, res) => {
+    console.log('Petición recibida')
+    //leemos el fichero Json
+        const datos = fs.readFileSync(
+            './backend/data/tarifas.json', 
+            'utf-8'
+        )
+    //convertimos el texto JSON en un objecto JavaScript
+    const datosJson = JSON.parse(datos)
+    //enviamos los datos comorespuesta al cliente web
+    res.json(datosJson)
+})
+
 //ponemos el servidor a escuchar en el puerto 3000
 async function iniciaServer() {
     try {
