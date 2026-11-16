@@ -9,6 +9,7 @@ import PoliticaPrivacidad from "../components/PoliticaPrivacidad.vue"
 import XestionDoctores from "../components/XestionDoctores.vue"
 import XestionCitas from "../components/XestionCitas.vue"
 import ServiciosMedicos from "../components/ServiciosMedicos.vue"
+import TariFas from "../components/TariFas.vue"
 
 
 const routes = [
@@ -16,6 +17,7 @@ const routes = [
     {path: '/sobrenos', name: 'SobreNos', component: SobreNos},
     {path: '/avisolegal', name: 'AvisoLegal', component: AvisoLegal},
     {path: '/servicios-medicos', name: 'ServiciosMedicos', component: ServiciosMedicos}, //step 2 add it to the path. next inster into navBar
+    {path: '/tarifas', name: 'TariFas', component: TariFas},
     {path: '/politica-privacidad', name: 'PoliticaPrivacidad', component: PoliticaPrivacidad},
     {path: '/xestion-pacientes', name: 'XestionPaciente', component: XestionPaciente},
     {path: '/xestion-doctores', name: 'XestionDoctores', component: XestionDoctores},
