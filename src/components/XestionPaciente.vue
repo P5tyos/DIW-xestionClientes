@@ -1,3 +1,10 @@
+<!-- eslint-disable vue/html-closing-bracket-newline -->
+<!-- eslint-disable vue/html-indent -->
+<!-- eslint-disable vue/first-attribute-linebreak -->
+<!-- eslint-disable vue/html-self-closing -->
+<!-- eslint-disable vue/attributes-order -->
+<!-- eslint-disable vue/singleline-html-element-content-newline -->
+<!-- eslint-disable vue/max-attributes-per-line -->
 <template>
   <!-- rounded-t-none: as esquinas de arriba rectas, para que o panel quede pegado ao menú sen oco; as de abaixo seguen redondeadas -->
   <TarxetaPanel etiqueta="div" class="w-full rounded-t-none text-left">

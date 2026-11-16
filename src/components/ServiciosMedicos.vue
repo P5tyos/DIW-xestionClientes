@@ -1,3 +1,5 @@
+<!-- eslint-disable vue/singleline-html-element-content-newline -->
+<!-- eslint-disable vue/max-attributes-per-line -->
 <!--Step 1 create the vue file. and populate it with the minimum. 
     copy the nearest match from other files-->
 

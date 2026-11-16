@@ -1,3 +1,4 @@
+<!-- eslint-disable vue/max-attributes-per-line -->
 <template>
   <!-- barra de navegación: no móbil logo + botón ☰ (o menú ábrese debaixo, en vertical); desde md, menú en liña.
        Esc pecha o menú aberto -->

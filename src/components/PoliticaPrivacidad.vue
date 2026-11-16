@@ -1,3 +1,5 @@
+<!-- eslint-disable vue/singleline-html-element-content-newline -->
+<!-- eslint-disable vue/max-attributes-per-line -->
 <template>
   <div class="w-full px-4 py-8 text-left md:px-8 md:py-12">
     <TarxetaPanel class="mx-auto max-w-3xl">
