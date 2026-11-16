@@ -225,7 +225,7 @@ const novaCita = reactive({
 // citas do paciente seleccionado, ordenadas por data e hora (punto 2: non se ven as doutros pacientes)
 const citasPaciente = computed(() =>
   citas.value
-    .filter((c) => c.dnipac === pacienteStore.dnipac)
+    .filter((c) => c.pacienteDNI === pacienteStore.dnipac)
     .sort((a, b) => (a.fecha + a.hora).localeCompare(b.fecha + b.hora))
     .filter((c) => mostrarBorradas.value || c.estado !== "borrada")  // filter step 2.2 goes through a list and keeps only the items that pass a test. now incl. the new variable too
 );
@@ -269,7 +269,7 @@ async function guardarCita() {
     }
   }
   // datos que se envían: os campos da cita + o paciente e o doctor seleccionados (sen o _id: vai na URL ao modificar)
-  const datos = { ...datosFormulario(), dnipac: pacienteStore.dnipac, doctorId: doctorStore._id };
+  const datos = { ...datosFormulario(), pacienteDNI: pacienteStore.dnipac, doctorId: doctorStore._id };
   gardando.value = true;
   try {
     if (editando.value) {

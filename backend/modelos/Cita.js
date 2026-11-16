@@ -3,9 +3,9 @@ import mongoose from "mongoose";
 
 const CitaSchema = new mongoose.Schema(
     {
-        dnipac: { 
-            type: String, 
-            required: true 
+        pacienteDNI: {
+            type: String,
+            required: true
         },
 
         doctorId: {
