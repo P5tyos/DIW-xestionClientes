@@ -403,12 +403,14 @@ function eliminarDoctorCargado() {
 }
 
 // botón ✏️: carga o doctor da táboa no formulario e activa o modo edición
-// (se no formulario hai datos sen gardar, pregunta antes de substituílos)
+// (só pregunta se hai alguén cargado con cambios sen gardar; o texto do filtro non se perde,
+// porque a fila premida sempre coincide con el)
 async function editarDoctor(index) {
-  if (!(await confirmarDescartar())) {
+  if (editando.value && !(await confirmarDescartar())) {
     return;
   }
   cargarNoFormulario(doctores.value[index]);
+  window.scrollTo({ top: 0, behavior: "smooth" }); // sube ao principio da páxina para ver o formulario
 }
 
 // Tab no campo DNI o tel: se o filtro deixa un só paciente na táboa, cárgao no formulario

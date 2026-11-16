@@ -1,0 +1,11 @@
+Fotos dos servizos médicos (páxina Servicios médicos)
+Todas de Unsplash, Licenza Unsplash (uso gratuíto, tamén comercial; non esixe atribución).
+https://unsplash.com/license
+Redimensionadas a 600 px de ancho e convertidas a .webp.
+
+presencial.webp  - Vitaly Gariev            - https://unsplash.com/photos/7-l5EL7YHI4
+online.webp      - Vitaly Gariev            - https://unsplash.com/photos/EVX9pt2dD1o
+pediatria.webp   - Vitaly Gariev            - https://unsplash.com/photos/QY8-IuUV3wk
+enfermeria.webp  - Afif Ramdhasuma          - https://unsplash.com/photos/lPjeFCIFJwk
+analisis.webp    - Adrian Sulyok            - https://unsplash.com/photos/sZO8ILzGKcg
+receta.webp      - Christina Victoria Craft - https://unsplash.com/photos/ZHys6xN7sUE

@@ -19,7 +19,7 @@ router.get("/", async (req, res) => {
 router.post("/", async (req, res) => {
     try {
         // comprobamos que existe un paciente con ese DNI
-        const paciente = await Paciente.findOne({ dnipac: req.body.dnipac });
+        const paciente = await Paciente.findOne({ dnipac: req.body.pacienteDNI });
         if (!paciente) {
             return res.status(404).json({ mensaje: "Paciente no encontrado" });
         }
