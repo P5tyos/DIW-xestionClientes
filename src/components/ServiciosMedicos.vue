@@ -56,7 +56,14 @@
             </li>
           </ul>
 
-          <BotonAccion to="/xestion-citas">Pedir cita</BotonAccion>
+          <!-- Pedir cita á esquerda e o prezo na mesma liña, á dereita (importes á dereita, regra do profesor).
+               Se non hai prezo (tarifas sen cargar ou servizo sen tarifas) só se ve o botón -->
+          <div class="flex items-center justify-between gap-4">
+            <BotonAccion to="/xestion-citas">Pedir cita</BotonAccion>
+            <p v-if="prezoDesde(servizo) !== null" class="text-right text-lg font-semibold text-acento tabular-nums">
+              A partir de {{ prezoDesde(servizo) }} €
+            </p>
+          </div>
         </TarxetaPanel>
       </template>
     </div>
@@ -66,13 +73,34 @@
 <script setup>
 import TarxetaPanel from "./comun/TarxetaPanel.vue";
 import { servizos } from "../data/servizos.js"; //step 4.2 tell this file, where the data lives
-import { ref, nextTick } from "vue";
+import { ref, nextTick, onMounted } from "vue";
+import { obtenerTarifas } from "../api/tarifas.js";
 import BotonAccion from "./comun/BotonAccion.vue"; //step 6.1 inport a commun element
 import { X, Check } from "lucide-vue-next";
 
 // step 5.1 : implement a variable that remembers which option is clicked/selected by the user
 // o servizo aberto agora mesmo (null = ningún: ao entrar non hai detalle aberto)
 const seleccionado = ref(null);
+
+// tarifas cargadas do backend (/api/tarifas); baleira se aínda non chegaron ou se fallou a carga
+const tarifas = ref([]);
+
+// ao entrar na páxina pedimos as tarifas; se fallan non avisamos: só non se ven os prezos
+onMounted(async () => {
+  try {
+    tarifas.value = await obtenerTarifas();
+  } catch (error) {
+    console.error("Non se puideron cargar as tarifas", error);
+  }
+});
+
+// prezo máis baixo entre as tarifas do servizo (servizo.tarifas = os seus ids); null se non ten ningunha
+function prezoDesde(servizo) {
+  const prezos = tarifas.value
+    .filter((t) => servizo.tarifas.includes(t.id))
+    .map((t) => t.prezo);
+  return prezos.length > 0 ? Math.min(...prezos) : null;
+}
 
 // tarxeta premida: se xa estaba aberta péchaa; se non, ábrea (e pecha a que houbese aberta)
 async function alternarServizo(servizo, evento) {

@@ -7,6 +7,7 @@ export const servizos = [
   {
     id: "presencial",
     imaxe: "/img/servizos/presencial.webp", // foto da tarxeta (créditos en public/img/servizos/CREDITOS.txt)
+    tarifas: [1], // ids das súas filas en backend/data/tarifas.json ("A partir de" = o prezo máis baixo; o informe médico, id 3, non conta)
     nome: "Consulta médica",
     subtitulo: "presencial",
     descricion: "Visita con tu médico de familia en el centro, con cita previa.",
@@ -15,6 +16,7 @@ export const servizos = [
   {
     id: "online",
     imaxe: "/img/servizos/online.webp",
+    tarifas: [2],
     nome: "Consulta médica",
     subtitulo: "online",
     descricion: "Habla con tu médico por videollamada, sin desplazarte.",
@@ -23,6 +25,7 @@ export const servizos = [
   {
     id: "pediatria",
     imaxe: "/img/servizos/pediatria.webp",
+    tarifas: [4, 5],
     nome: "Pediatría",
     subtitulo: "niños y adolescentes",
     descricion: "Atención médica desde el nacimiento hasta los 14 años.",
@@ -31,6 +34,7 @@ export const servizos = [
   {
     id: "enfermeria",
     imaxe: "/img/servizos/enfermeria.webp",
+    tarifas: [6, 7, 8],
     nome: "Enfermería",
     subtitulo: "curas y vacunas",
     descricion: "Cuidados de enfermería sin necesidad de pasar por el médico.",
@@ -39,6 +43,7 @@ export const servizos = [
   {
     id: "analisis",
     imaxe: "/img/servizos/analisis.webp",
+    tarifas: [9, 10],
     nome: "Análisis clínicos",
     subtitulo: "extracción de sangre",
     descricion: "Extracciones en el propio centro, de lunes a viernes por la mañana.",
@@ -47,6 +52,7 @@ export const servizos = [
   {
     id: "receta",
     imaxe: "/img/servizos/receta.webp",
+    tarifas: [11],
     nome: "Receta",
     subtitulo: "renovar medicación",
     descricion: "Renueva tu medicación habitual sin necesidad de una consulta completa.",

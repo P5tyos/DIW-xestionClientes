@@ -1,14 +1,15 @@
 {
   "tarifas": [
-    { "id": 1, "servizo": "Consulta médica", "concepto": "Consulta presencial", "prezo": 45 },
-    { "id": 2, "servizo": "Consulta médica", "concepto": "Consulta online", "prezo": 30 },
+    { "id": 1, "servizo": "Consulta médica", "concepto": "Consulta presencial", "prezo": 55 },
+    { "id": 2, "servizo": "Consulta médica", "concepto": "Consulta online", "prezo": 40 },
     { "id": 3, "servizo": "Consulta médica", "concepto": "Informe médico", "prezo": 25 },
-    { "id": 4, "servizo": "Pediatría", "concepto": "Revisión do neno san", "prezo": 40 },
-    { "id": 5, "servizo": "Pediatría", "concepto": "Consulta por enfermidade", "prezo": 45 },
-    { "id": 6, "servizo": "Enfermería", "concepto": "Cura simple", "prezo": 15 },
-    { "id": 7, "servizo": "Enfermería", "concepto": "Vacinación", "prezo": 20 },
-    { "id": 8, "servizo": "Enfermería", "concepto": "Control de tensión e glicosa", "prezo": 10 },
-    { "id": 9, "servizo": "Análises clínicas", "concepto": "Análise de sangue básica", "prezo": 35 },
-    { "id": 10, "servizo": "Análises clínicas", "concepto": "Análise de urina", "prezo": 18 }
+    { "id": 4, "servizo": "Pediatría", "concepto": "Revisión do neno san", "prezo": 50 },
+    { "id": 5, "servizo": "Pediatría", "concepto": "Consulta por enfermidade", "prezo": 55 },
+    { "id": 6, "servizo": "Enfermería", "concepto": "Cura simple", "prezo": 25 },
+    { "id": 7, "servizo": "Enfermería", "concepto": "Vacinación", "prezo": 30 },
+    { "id": 8, "servizo": "Enfermería", "concepto": "Control de tensión e glicosa", "prezo": 20 },
+    { "id": 9, "servizo": "Análises clínicas", "concepto": "Análise de sangue básica", "prezo": 55 },
+    { "id": 10, "servizo": "Análises clínicas", "concepto": "Análise de urina", "prezo": 38 },
+    { "id": 11, "servizo": "Receita", "concepto": "Renovación de receita", "prezo": 22}
     ]
 }
