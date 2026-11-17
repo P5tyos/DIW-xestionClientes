@@ -207,11 +207,20 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(p, index) in pacientesFiltrados" :key="p._id" class="bg-white">
+          <!-- fila do paciente cargado no formulario: verde máis forte (banda); as demais: verde claro co rato enriba -->
+          <tr
+            v-for="(p, index) in pacientesFiltrados"
+            :key="p._id"
+            :class="estaCargado(p) ? 'bg-banda' : 'bg-white hover:bg-acento-suave'"
+          >
             <!-- números (nº, DNI, data, teléfono) centrados; o texto á esquerda -->
             <td class="border border-acento-claro p-3 text-center">{{ index + 1 }}</td>
             <td class="border border-acento-claro p-3 text-center">{{ p.dnipac }}</td>
-            <td class="border border-acento-claro p-3">{{ p.apelpac }}</td>
+            <td class="border border-acento-claro p-3">
+              {{ p.apelpac }}
+              <!-- a cor non a ven os lectores de pantalla: dicímolo con texto oculto -->
+              <span v-if="estaCargado(p)" class="sr-only">(cargado no formulario)</span>
+            </td>
             <td class="border border-acento-claro p-3">{{ p.nomepac }}</td>
             <td class="border border-acento-claro p-3 text-center">{{ p.nacipac }}</td>
             <td class="border border-acento-claro p-3 text-center">{{ p.movilpac }}</td>
@@ -483,6 +492,11 @@ async function editarUsuario(index){
   }
   await cargarNoFormulario(pacientes.value[index]);
   window.scrollTo({ top: 0, behavior: "smooth" }); // sube ao principio da páxina para ver o formulario
+}
+
+// true se ese paciente da táboa é o que está cargado no formulario (para resaltar a súa fila)
+function estaCargado(paciente) {
+  return editando.value && paciente.dnipac === novoPaciente.dnipac;
 }
 
 // Tab no campo DNI o tel: se o filtro deixa un só paciente na táboa, cárgao no formulario
