@@ -112,6 +112,15 @@
         </CampoFormulario>
       </div>
 
+      <!-- NEW FIELD · STEP 5/8 -->
+      <!--
+      <div class="flex flex-col gap-4 md:flex-row">
+        <CampoFormulario id="alerxias" etiqueta="Alerxias" class="md:flex-1" v-slot="{ clases }">
+          <input id="alerxias" v-model="novoPaciente.alerpac" type="text" autocomplete="off" :class="clases" />
+        </CampoFormulario>
+      </div>
+      -->
+
       <!-- política de privacidade, erros e botóns, centrados -->
       <div class="flex flex-col items-center gap-4">
         <label class="flex items-start gap-2">
@@ -228,6 +237,8 @@
             <td class="border border-acento-claro p-3">{{ p.dirpac }}</td>
             <td class="border border-acento-claro p-3">{{ p.propac }}</td>
             <td class="border border-acento-claro p-3">{{ p.munipac }}</td>
+            <!-- NEW FIELD · STEP 6b/8 -->
+            <!-- <td class="border border-acento-claro p-3">{{ p.alerpac }}</td> -->
             <td class="border border-acento-claro p-3">
               <!-- pacientes.indexOf(p): a posición na listaxe completa (co filtro, o index da fila non é o mesmo) -->
               <div class="flex justify-center gap-2">
@@ -281,6 +292,8 @@ import BotonAccion from "./comun/BotonAccion.vue";
 
 // cabeceiras da táboa (así o <th> escríbese unha soa vez)
 const cabeceiras = ["#", "DNI/NIE", "Apelido", "Nome", "Fecha nacemento", "Telefono", "Correo", "Dirección", "Provincia", "Municipio", "Accións"];
+// NEW FIELD · STEP 6a/8
+// const cabeceiras = ["#", "DNI/NIE", "Apelido", "Nome", "Fecha nacemento", "Telefono", "Correo", "Dirección", "Provincia", "Municipio", "Alerxias", "Accións"];
 import { usePacienteStore } from "../store/pacienteStore.js";
 
 const pacientes = ref([]); //almacena la lista de pacientes e os seus cambios
@@ -303,6 +316,8 @@ const LETRAS_DNI = "TRWAGMYFPDXBNJZSQVHLCKE"
 
 // campos do formulario que se comparan para saber se hai cambios sen gardar
 const CAMPOS = ["dnipac", "nomepac", "apelpac", "nacipac", "mailpac", "movilpac", "dirpac", "propac", "munipac", "lopdpac"];
+// NEW FIELD · STEP 4/8 
+// const CAMPOS = ["dnipac", "nomepac", "apelpac", "nacipac", "mailpac", "movilpac", "dirpac", "propac", "munipac", "lopdpac", "alerpac"];
 // copia dos datos do paciente tal como se cargou (✏️ ou 🔍); null se o formulario é dun paciente novo
 const copiaOrixinal = ref(null);
 
@@ -316,7 +331,9 @@ const novoPaciente = reactive({
   dirpac: "",
   propac: "",
   munipac: "",
-  lopdpac: false
+  lopdpac: false,
+  // NEW FIELD · STEP 3/8
+  // alerpac: "",
 });
 
 // por que non se pode gardar aínda ("" se xa se pode). Gardar desactívase mentres non estea baleiro,
@@ -334,6 +351,8 @@ const motivoNonGardar = computed(() => {
   if (novoPaciente.nomepac.trim() === "") falta.push("Nome");
   if (novoPaciente.movilpac.trim() === "") falta.push("Teléfono");
   if (!novoPaciente.lopdpac) falta.push("aceptar a política de privacidade");
+  // NEW FIELD · STEP 7/8
+  // if (novoPaciente.alerpac.trim() === "") falta.push("Alerxias");
   return falta.length ? "Para gardar falta: " + falta.join(", ") : "";
 });
 
@@ -599,6 +618,9 @@ function exportarPacientes() {
     "Listaxe de pacientes",
     ["DNI/NIE", "Apelido", "Nome", "Teléfono"],
     pacientesFiltrados.value.map((p) => [p.dnipac, p.apelpac, p.nomepac, p.movilpac]),
+    // NEW FIELD · STEP 8/8
+    //   ["DNI/NIE", "Apelido", "Nome", "Teléfono", "Alerxias"],
+    //   pacientesFiltrados.value.map((p) => [p.dnipac, p.apelpac, p.nomepac, p.movilpac, p.alerpac ?? ""]),
     `${total} ${total === 1 ? "paciente" : "pacientes"}` + (filtroActivo.value ? " (listaxe filtrada)" : "")
   );
 }
