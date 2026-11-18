@@ -139,8 +139,8 @@
         </CaixaErros>
 
         <!-- botóns: no móbil un debaixo do outro a todo o ancho; desde md en liña e todos do mesmo ancho
-             (md:w-27 = 108 px, o do máis longo, "Eliminar"). Eliminar sempre separado -->
-        <div class="flex w-full flex-col gap-3 md:w-auto md:flex-row md:items-center">
+             (md:w-27 = 108 px, o do máis longo, "Eliminar"). Os tres á mesma distancia (petición do profesor) -->
+        <div class="flex w-full flex-col gap-3 md:w-auto md:flex-row md:items-center md:gap-4">
           <!-- axuda de Gardar ("Para gardar falta…"): un botón disabled non recibe o rato, así que o tooltip
                móstrao o span que o envolve (group-hover), só en pantallas con rato (pointer-fine).
                Sen rato (táctiles, só teclado) o texto vese debaixo dos botóns. Os lectores de pantalla len o texto
@@ -164,11 +164,11 @@
           </span>
           <!-- Limpiar ao lado de Gardar (onde xa está a man); fai o mesmo que 🧹 -->
           <BotonAccion variante="secundario" class="w-full md:w-27" @click="limparConConfirmacion">Limpiar</BotonAccion>
-          <!-- Eliminar só aparece cando hai un paciente cargado (✏️ ou 🔍); separado dos outros para non premelo sen querer -->
+          <!-- Eliminar só aparece cando hai un paciente cargado (✏️ ou 🔍); se se preme sen querer, a pregunta "Seguro…?" ten Cancelar marcado -->
           <BotonAccion
             v-if="editando"
             variante="perigo"
-            class="mt-4 w-full md:mt-0 md:ml-10 md:w-27"
+            class="w-full md:w-27"
             title="Eliminar"
             :disabled="gardando"
             @click="eliminarPacienteCargado"
@@ -222,7 +222,7 @@
               <span v-if="estaCargado(p)" class="sr-only">(cargado no formulario)</span>
             </td>
             <td class="border border-acento-claro p-3">{{ p.nomepac }}</td>
-            <td class="border border-acento-claro p-3 text-center">{{ p.nacipac }}</td>
+            <td class="border border-acento-claro p-3 text-center">{{ formatearData(p.nacipac) }}</td>
             <td class="border border-acento-claro p-3 text-center">{{ p.movilpac }}</td>
             <td class="border border-acento-claro p-3">{{ p.mailpac }}</td>
             <td class="border border-acento-claro p-3">{{ p.dirpac }}</td>
@@ -708,6 +708,11 @@ function formatearNome(valor) {
     .map((palabra) => palabra.charAt(0).toUpperCase() + palabra.slice(1).toLowerCase())
     .join(" ")
   }
+
+// para formatear fecha, to show it in spanish style
+function formatearData(data) {
+  return data ? data.split("-").reverse().join("/") : "";
+}
   
 </script>
 

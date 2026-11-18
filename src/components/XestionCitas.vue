@@ -69,8 +69,16 @@
 
       <!-- fila 2: data, hora, motivo e estado -->
       <div class="flex flex-col gap-4 md:flex-row">
-        <CampoFormulario id="data" etiqueta="Data" obrigatorio class="md:w-44" v-slot="{ clases }">
-          <input id="data" v-model="novaCita.fecha" type="date" required :class="[clases, 'text-center']" />
+        <CampoFormulario id="data" etiqueta="Data" obrigatorio :erro="dataPasada" class="md:w-44" v-slot="{ clases }">
+          <input
+            id="data"
+            v-model="novaCita.fecha"
+            type="date"
+            required
+            :min="editando ? undefined : hoxe"
+            :aria-describedby="dataPasada ? 'data-erro' : undefined"
+            :class="[clases, 'text-center']"
+          />
         </CampoFormulario>
         <CampoFormulario id="hora" etiqueta="Hora" obrigatorio class="md:w-32" v-slot="{ clases }">
           <input id="hora" v-model="novaCita.hora" type="time" required :class="[clases, 'text-center']" />
@@ -101,7 +109,13 @@
 
       <!-- botóns, centrados: no móbil un debaixo do outro a todo o ancho; desde md en liña e do mesmo ancho (md:w-27) -->
       <div class="flex flex-col items-center gap-4">
-        <div class="flex w-full flex-col gap-3 md:w-auto md:flex-row md:items-center">
+        <!-- erro da data, enriba de Gardar (coma nas outras páxinas) -->
+        <CaixaErros v-if="dataPasada">
+          <p id="data-erro" role="alert">
+            A data non pode ser anterior a hoxe. Exemplo: {{ formatearData(hoxe) }} ou posterior
+          </p>
+        </CaixaErros>
+        <div class="flex w-full flex-col gap-3 md:w-auto md:flex-row md:items-center md:gap-4">
           <!-- axuda de Gardar ("Para gardar falta…"): tooltip co rato (pointer-fine + group-hover);
                sen rato, o texto vese debaixo dos botóns. Os lectores de pantalla len o de abaixo (aria-describedby) -->
           <span class="group relative flex md:inline-flex" :class="motivoNonGardar ? 'cursor-not-allowed' : ''">
@@ -135,9 +149,19 @@
       Selecciona un paciente na páxina de Pacientes (✏️ ou 🔍) para ver as súas citas.
     </p>
     <template v-else>
-      <p class="mb-2 text-sm italic">Citas de {{ pacienteStore.nomepac }} {{ pacienteStore.apelpac }} ({{ pacienteStore.dnipac }})</p>
-     
-      <label class="mb-2 flex items-center gap-2 text-sm"><input v-model="mostrarBorradas" type="checkbox" /> Mostrar as citas borradas </label> <!-- Filter Step 2.3 creates the checkbox-->
+      <!-- de quen son as citas: centrado e máis grande (por iso a táboa xa non leva a columna Paciente) -->
+      <p class="mb-4 text-center text-lg font-semibold text-titulo">
+        Citas de
+        <!-- só o nome destacado -->
+        <span class="rounded-md bg-banda px-2 py-0.5">{{ pacienteStore.nomepac }} {{ pacienteStore.apelpac }}</span>
+        ({{ pacienteStore.dnipac }})
+      </p>
+
+      <!-- opcións da lista: ordenar á esquerda, mostrar borradas á dereita (no móbil, se non caben, unha debaixo da outra) -->
+      <div class="mb-2 flex flex-wrap justify-between gap-2">
+        <label class="flex items-center gap-2 text-sm"><input v-model="ordenarPorData" type="checkbox" /> Ordenar por data</label>
+        <label class="flex items-center gap-2 text-sm"><input v-model="mostrarBorradas" type="checkbox" /> Mostrar as citas borradas </label> <!-- Filter Step 2.3 creates the checkbox-->
+      </div>
       <!-- no móbil a táboa desprázase en horizontal dentro do seu contedor (non a páxina enteira) -->
       <div v-if="citasPaciente.length > 0" class="overflow-x-auto">
         <table class="w-full border-collapse text-sm">
@@ -154,8 +178,6 @@
               <!-- datas e horas centradas; o texto á esquerda -->
               <td class="border border-acento-claro p-3 text-center">{{ formatearData(c.fecha) }}</td>
               <td class="border border-acento-claro p-3 text-center">{{ c.hora }}</td>
-              <!-- a cita só garda o DNI; o nome vén do paciente seleccionado (todas as filas son súas) -->
-              <td class="border border-acento-claro p-3">{{ pacienteStore.nomepac }} {{ pacienteStore.apelpac }}</td>
               <!-- doctorId vén "populado" do backend: é o doctor enteiro, non só o _id -->
               <td class="border border-acento-claro p-3">{{ c.doctorId ? `${c.doctorId.nomedoc} ${c.doctorId.apeldoc}` : "(doctor eliminado)" }}</td>
               <td class="border border-acento-claro p-3">{{ c.doctorId?.espedoc }}</td>
@@ -193,17 +215,25 @@ import TarxetaPanel from "./comun/TarxetaPanel.vue";
 import TituloSeccion from "./comun/TituloSeccion.vue";
 import CampoFormulario from "./comun/CampoFormulario.vue";
 import BotonAccion from "./comun/BotonAccion.vue";
+import CaixaErros from "./comun/CaixaErros.vue";
 
 // cabeceiras da táboa (así o <th> escríbese unha soa vez)
-const cabeceiras = ["Data", "Hora", "Paciente", "Doctor", "Especialidade", "Motivo", "Estado", "Observacións", "Accións"];
+const cabeceiras = ["Data", "Hora", "Doctor", "Especialidade", "Motivo", "Estado", "Observacións", "Accións"];
 
 // paciente e doctor seleccionados nas súas páxinas (Pinia): de aquí sae para quen e con quen é a cita
 const pacienteStore = usePacienteStore();
 const doctorStore = useDoctorStore();
 
+// data de hoxe como texto "AAAA-MM-DD" (o mesmo formato que fecha), en hora local
+const agora = new Date();
+const hoxe = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, "0")}-${String(agora.getDate()).padStart(2, "0")}`;
+
 const citas = ref([]); // todas as citas da BD (na táboa só se ven as do paciente seleccionado)
 const gardando = ref(false); // bloquea Gardar mentres se envía a cita
 const editando = ref(false); // true cando hai unha cita cargada (✏️): Gardar modifícaa en vez de crear outra
+// checkbox "Ordenar por data": true = a lista vai da cita máis afastada no futuro á máis antiga, co separador "Hoxe"
+// (o separador "Hoxe" engádese despois)
+const ordenarPorData = ref(false);
 const mostrarBorradas = ref(false); // filtrar step 2.1 variable for the checkbox =>  true = a táboa tamén mostra as citas borradas 
 
 // campos da cita que se editan no formulario
@@ -222,17 +252,33 @@ const novaCita = reactive({
   observacions: "",
 });
 
+// data coa que se cargou a cita ao editala (✏️): ao editar pódese deixar a data pasada como estaba
+const dataOrixinal = ref("");
+
+// true se a data escollida é anterior a hoxe e non é a que xa tiña a cita que se está editando
+const dataPasada = computed(() =>
+  novaCita.fecha !== "" &&
+  novaCita.fecha < hoxe &&
+  !(editando.value && novaCita.fecha === dataOrixinal.value)
+);
+
 // citas do paciente seleccionado, ordenadas por data e hora (punto 2: non se ven as doutros pacientes)
 const citasPaciente = computed(() =>
   citas.value
     .filter((c) => c.pacienteDNI === pacienteStore.dnipac)
-    .sort((a, b) => (a.fecha + a.hora).localeCompare(b.fecha + b.hora))
+    // "Ordenar por data" marcado: da máis afastada no futuro á máis antiga; sen marcar: da máis antiga á máis nova
+    .sort((a, b) =>
+      ordenarPorData.value
+        ? (b.fecha + b.hora).localeCompare(a.fecha + a.hora)
+        : (a.fecha + a.hora).localeCompare(b.fecha + b.hora)
+    )
     .filter((c) => mostrarBorradas.value || c.estado !== "borrada")  // filter step 2.2 goes through a list and keeps only the items that pass a test. now incl. the new variable too
 );
 
 // por que non se pode gardar aínda ("" se xa se pode); móstrase como axuda sobre o botón
 const motivoNonGardar = computed(() => {
   if (gardando.value) return "Gardando…";
+  if (dataPasada.value) return "A data non pode ser anterior a hoxe";
   const falta = [];
   if (!pacienteStore.dnipac) falta.push("paciente (selecciónao en Pacientes)");
   if (!doctorStore._id) falta.push("doctor (selecciónao en Doctores)");
@@ -305,6 +351,7 @@ async function editarCita(cita) {
   CAMPOS.forEach((campo) => {
     novaCita[campo] = cita[campo] ?? "";
   });
+  dataOrixinal.value = cita.fecha; // para permitir gardala sen cambiar a data aínda que xa pasase
   novaCita._id = cita._id;
   if (cita.doctorId) {
     doctorStore.seleccionarDoctor(cita.doctorId); // doctorId vén "populado": é o doctor enteiro
@@ -346,6 +393,7 @@ function baleirarCita() {
   delete novaCita._id; // un _id baleiro faría fallar a seguinte cita nova
   editando.value = false;
   copiaOrixinal.value = null;
+  dataOrixinal.value = "";
 }
 
 // os campos da cita do formulario, sen o _id

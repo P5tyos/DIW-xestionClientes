@@ -2,7 +2,9 @@
 <template>
   <!-- barra de navegación: no móbil logo + botón ☰ (o menú ábrese debaixo, en vertical); desde md, menú en liña.
        Esc pecha o menú aberto -->
-  <nav class="flex flex-wrap items-center justify-between gap-2 bg-acento px-4 py-2 text-white md:px-8" @keydown.esc="aberto = false">
+  <!-- desde md o menú queda fixo arriba (sticky top-0) e a páxina pasa por debaixo; z-20 para quedar enriba do contido
+       (o tooltip de Gardar usa z-10). No móbil desprázase coa páxina coma sempre -->
+  <nav class="flex flex-wrap items-center justify-between gap-2 bg-acento px-4 py-2 text-white md:sticky md:top-0 md:z-20 md:px-8" @keydown.esc="aberto = false">
     <div class="flex items-center gap-2 font-semibold">
       <!-- logo: corazón vermello cunha cruz branca (decorativo: o nome xa vai ao lado).
            O seu vermello é o do logo, non unha cor da interface: única excepción á paleta -->

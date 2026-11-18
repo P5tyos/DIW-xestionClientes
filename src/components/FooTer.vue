@@ -1,6 +1,7 @@
 <template>
   <!-- pé de páxina: as ligazóns en verde moi claro (acento-suave, 4.6:1 sobre o verde) e brancas ao pasar o rato -->
-  <footer class="mt-12 bg-acento px-4 py-3 text-sm text-white">
+  <!-- desde md o pé queda fixo abaixo (sticky bottom-0) e a páxina pasa por debaixo; no móbil vai despois do contido -->
+  <footer class="mt-12 bg-acento px-4 py-3 text-sm text-white md:sticky md:bottom-0 md:z-20">
     <div class="flex flex-wrap items-center justify-center gap-x-6 gap-y-1">
       <RouterLink
         to="/avisolegal"

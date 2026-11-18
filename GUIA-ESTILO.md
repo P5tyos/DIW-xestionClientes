@@ -78,7 +78,7 @@ branco sobre `acento` 5.0 · `titulo` sobre branco 7.8 · `titulo` sobre `banda`
 |---|---|
 | Principal (Gardar) | `bg-acento text-white hover:bg-acento-escuro` |
 | Secundario (Limpiar, PDF) | `bg-white text-acento border border-acento hover:bg-acento-suave` |
-| Perigo (Eliminar) | `bg-perigo text-white hover:brightness-90` — sempre separado dos outros |
+| Perigo (Eliminar) | `bg-perigo text-white hover:brightness-90` — á mesma distancia ca os outros (petición do profesor) |
 | Icona (🔍 🧹 ✏️) | cadrado `size-11 md:size-10`, `border border-borde`, icona SVG de 20 px |
 | Icona de borrar (🗑️ nas táboas) | igual, pero `border-perigo text-perigo hover:bg-perigo-suave` |
 
@@ -119,7 +119,7 @@ Exemplo: `flex flex-col md:flex-row` = unha columna no móbil, fila no escritori
 - Ancho da páxina: o mesmo en todas, máximo 1280 px (`max-w-7xl` no contedor de `App.vue`).
 - **Formularios:** no móbil, un campo por fila coa etiqueta enriba; desde `md`, as filas acordadas coa etiqueta á esquerda.
   Campos de formato fixo (DNI, ID, teléfono, data, selects, radios) con ancho fixo en escritorio; no móbil ocupan todo o ancho.
-- **Botóns de Gardar / Limpiar / Eliminar:** no móbil, un debaixo do outro e a todo o ancho, con Eliminar separado dos outros dous;
+- **Botóns de Gardar / Limpiar / Eliminar:** no móbil, un debaixo do outro e a todo o ancho, os tres á mesma distancia (`gap-3`, `md:gap-4`);
   desde `md`, en liña como agora.
 - **Menú:** no móbil, botón ☰ que abre o menú en vertical; desde `md`, o menú normal en liña.
 - **Táboas:** no móbil, desprazamento horizontal dentro da propia táboa (`overflow-x-auto` nun contedor), sen que se desprace a páxina enteira.

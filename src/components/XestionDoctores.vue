@@ -100,8 +100,8 @@
         </CaixaErros>
 
         <!-- botóns: no móbil un debaixo do outro a todo o ancho; desde md en liña e todos do mesmo ancho
-             (md:w-27 = 108 px, o do máis longo, "Eliminar"). Eliminar sempre separado -->
-        <div class="flex w-full flex-col gap-3 md:w-auto md:flex-row md:items-center">
+             (md:w-27 = 108 px, o do máis longo, "Eliminar"). Os tres á mesma distancia (petición do profesor) -->
+        <div class="flex w-full flex-col gap-3 md:w-auto md:flex-row md:items-center md:gap-4">
           <!-- axuda de Gardar ("Para gardar falta…"): tooltip co rato (pointer-fine + group-hover);
                sen rato, o texto vese debaixo dos botóns. Os lectores de pantalla len o de abaixo (aria-describedby) -->
           <span class="group relative flex md:inline-flex" :class="motivoNonGardar ? 'cursor-not-allowed' : ''">
@@ -123,11 +123,11 @@
           </span>
           <!-- Limpiar ao lado de Gardar (onde xa está a man); fai o mesmo que 🧹 -->
           <BotonAccion variante="secundario" class="w-full md:w-27" @click="limparConConfirmacion">Limpiar</BotonAccion>
-          <!-- Eliminar só aparece cando hai un doctor cargado (✏️); separado dos outros para non premelo sen querer -->
+          <!-- Eliminar só aparece cando hai un doctor cargado (✏️); se se preme sen querer, a pregunta "Seguro…?" ten Cancelar marcado -->
           <BotonAccion
             v-if="editando"
             variante="perigo"
-            class="mt-4 w-full md:mt-0 md:ml-10 md:w-27"
+            class="w-full md:w-27"
             title="Eliminar"
             :disabled="gardando"
             @click="eliminarDoctorCargado"
