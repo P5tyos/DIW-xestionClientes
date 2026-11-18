@@ -69,6 +69,7 @@ const ligazons = [
   { ruta: "/xestion-pacientes", texto: "Pacientes" },
   { ruta: "/xestion-doctores", texto: "Doctores" },
   { ruta: "/xestion-citas", texto: "Citas" },
+  { ruta: "/axenda", texto: "Axenda" },
   { ruta: "/sobrenos", texto: "Sobre nós" },
 ];
 
