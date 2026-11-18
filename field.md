@@ -75,3 +75,21 @@ In `exportarPacientes`, add the header to the headers array **and** the value to
 2. Create a patient with the field filled in; it should appear in the table.
 3. ✏️ that patient: the value is loaded in the form. Change it and save.
 4. Optional: `curl http://localhost:3000/api/pacientes` to see `alerpac` in the JSON.
+
+
+Gaps in the guide:
+
+1. A field with validation (the biggest gap). If the exam says something like "add the Tarxeta Sanitaria, format XXXX…", the guide doesn't show validation. The pattern already exists in the code: copy the telephone field. A new validated field needs:
+
+a flag ref, e.g. const tarxetaInvalida = ref(false)
+a validarTarxeta() function (copy validarTelefono and change the regex)
+@blur / @input / :aria-invalid / aria-describedby on the input
+a <p id="tarxeta-erro" role="alert"> in the CaixaErros block (and its v-if)
+the flag added in three places: the "Corrixe os campos…" line in motivoNonGardar, the re-validation in guardarPaciente, and the reset in limpiarFormpac
+I can add this as an optional STEP 9 if you want.
+
+2. If the field goes in Doctores instead of Pacientes, there are two traps:
+
+limpiarFormdoc deletes every key that isn't in CAMPOS. So in Doctores, step 4 isn't optional: without it, the field disappears the first time you clear the form.
+The duplicate check datosDoctor in doctores.rutas.js:7 lists every field by name. Add the new one there too, or two doctors that differ only in the new field would count as the same doctor.
+3. Citas uses pacienteDNI and doctorId from the stores and has no filter, so most of the guide applies, but not all of it. That case is less likely, so I'd only look at it if you have time.
