@@ -6,9 +6,10 @@
 
     <!-- de momento só o esqueleto: o envío non comproba nada (falta o backend de usuarios) -->
     <form class="flex flex-col gap-4" @submit.prevent="entrar">
-      <!-- autocomplete: así o navegador e os xestores de contrasinais recoñecen o formulario de acceso -->
-      <CampoFormulario id="usuario" etiqueta="Usuario" obrigatorio v-slot="{ clases }">
-        <input id="usuario" v-model="usuario" type="text" autocomplete="username" required :class="clases" />
+      <!-- accédese co DNI/NIE (o mesmo co que se rexistra); centrado, coma todos os DNI.
+           autocomplete: así o navegador e os xestores de contrasinais recoñecen o formulario de acceso -->
+      <CampoFormulario id="dni" etiqueta="DNI/NIE" obrigatorio v-slot="{ clases }">
+        <input id="dni" v-model="dni" type="text" autocomplete="username" required :class="[clases, 'text-center']" />
       </CampoFormulario>
 
       <CampoFormulario id="contrasinal" etiqueta="Contrasinal" obrigatorio v-slot="{ clases }">
@@ -46,6 +47,11 @@
       </div>
 
       <BotonAccion tipo="submit" class="w-full">Entrar</BotonAccion>
+
+      <!-- rexistro de usuarios novos: abre a súa propia páxina -->
+      <p class="text-center text-sm">
+        Novo usuario? <RouterLink to="/rexistro" class="text-acento underline hover:text-acento-escuro">Rexistra unha conta</RouterLink>
+      </p>
     </form>
   </TarxetaPanel>
 </template>
@@ -62,7 +68,7 @@ import TituloSeccion from "./comun/TituloSeccion.vue";
 import CampoFormulario from "./comun/CampoFormulario.vue";
 import BotonAccion from "./comun/BotonAccion.vue";
 
-const usuario = ref(""); // nome de usuario escrito
+const dni = ref(""); // DNI/NIE escrito (é o nome de usuario)
 const contrasinal = ref(""); // contrasinal escrito
 const verContrasinal = ref(false); // true = o contrasinal vese en texto normal
 const lembrar = ref(false); // checkbox "Lembrar a sesión"
