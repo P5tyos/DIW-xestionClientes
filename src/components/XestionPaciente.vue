@@ -451,7 +451,12 @@ async function guardarPaciente() {
     limpiarFormpac(); //baleira o formulario e sae do modo edición (e deselecciona o paciente para Citas)
   } catch (error) {
     console.error("Erro ao gardar paciente:", error);
-    if (error.response?.status === 409) {
+    if (error.response?.status === 409 && error.response.data?.campo === "movilpac") {
+      // o teléfono xa o ten outro paciente (petición do profesor): o formulario conserva os datos
+      // e, ao pechar o aviso, o foco vai ao teléfono para corrixir só ese campo
+      await alertaError("Este número de móbil xa existe noutro paciente: non se pode usar de novo.");
+      document.getElementById("telefono")?.focus();
+    } else if (error.response?.status === 409) {
       // o backend responde 409 cando o DNI xa existe: é un erro que o usuario pode corrixir el mesmo
       alertaError("Xa existe un paciente con este DNI/NIE.");
     } else {

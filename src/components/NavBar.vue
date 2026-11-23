@@ -50,6 +50,18 @@
           {{ ligazon.texto }}
         </RouterLink>
       </li>
+      <!-- Acceso, ao final á dereita (coma na maioría das webs): no móbil icona + texto; desde md só a icona
+           (o texto queda para os lectores de pantalla con md:sr-only) -->
+      <li class="md:ml-4">
+        <RouterLink
+          to="/acceso"
+          title="Acceso de usuario"
+          class="flex items-center gap-2 border-b-4 border-transparent px-2 py-2 font-semibold text-white no-underline focus-visible:outline-acento-claro md:px-0 md:py-1 [&.router-link-active]:border-acento-claro"
+        >
+          <CircleUserRound class="size-6" aria-hidden="true" />
+          <span class="md:sr-only">Acceso</span>
+        </RouterLink>
+      </li>
     </ul>
   </nav>
 </template>
@@ -57,7 +69,7 @@
 <script setup>
 import { ref, watch } from "vue";
 import { useRoute } from "vue-router";
-import { Menu, X } from "lucide-vue-next";
+import { Menu, X, CircleUserRound } from "lucide-vue-next";
 
 const aberto = ref(false); // menú do móbil aberto ou pechado
 

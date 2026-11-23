@@ -11,6 +11,7 @@ import XestionCitas from "../components/XestionCitas.vue"
 import ServiciosMedicos from "../components/ServiciosMedicos.vue"
 import TariFas from "../components/TariFas.vue"
 import AxendaDia from "../components/AxendaDia.vue"
+import VistaAcceso from "../components/VistaAcceso.vue"
 
 
 const routes = [
@@ -24,6 +25,7 @@ const routes = [
     {path: '/xestion-doctores', name: 'XestionDoctores', component: XestionDoctores},
     {path: '/xestion-citas', name: 'XestionCitas', component: XestionCitas},
     {path: '/axenda', name: 'AxendaDia', component: AxendaDia},
+    {path: '/acceso', name: 'VistaAcceso', component: VistaAcceso},
     {path: '/:pathMatch(.*)*', name: 'NotFound', component: NotFound}
 ];
 

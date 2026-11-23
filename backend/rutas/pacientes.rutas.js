@@ -25,10 +25,16 @@ router.post("/", async (req, res) => {
     try {
         const pacienteExistente = await Paciente.findOne( 
             {dnipac: req.body.dnipac,})
+        // "campo" di ao frontend que dato está repetido (hai dous 409: DNI e teléfono)
         if (pacienteExistente){
             return res.status(409).json({
                 mensaje: "Ya existe un paciente con este DNI",
+                campo: "dnipac",
             })
+        }
+        // o teléfono non se pode repetir (petición do profesor)
+        if (await Paciente.findOne({ movilpac: req.body.movilpac })) {
+            return res.status(409).json({ mensaje: "Ya existe un paciente con este teléfono", campo: "movilpac" });
         }
         
         console.log("Datos Recibidos: ",req.body);
@@ -62,6 +68,11 @@ router.put("/:dni", async (req, res) => {
         // así que borramos dnipac (e o _id de MongoDB) do body aínda que alguén os envíe
         delete req.body.dnipac;
         delete req.body._id;
+        // o teléfono non se pode repetir: buscamos outro paciente con el (excluíndo o que se modifica, $ne = distinto de)
+        if (req.body.movilpac !== undefined &&
+            await Paciente.findOne({ movilpac: req.body.movilpac, dnipac: { $ne: req.params.dni } })) {
+            return res.status(409).json({ mensaje: "Ya existe un paciente con este teléfono", campo: "movilpac" });
+        }
         const paciente = await Paciente.findOneAndUpdate({ dnipac: req.params.dni }, req.body, { new: true });
         if (!paciente) {
             return res.status(404).json({ mensaje: "Paciente no encontrado" });

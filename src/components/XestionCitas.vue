@@ -86,6 +86,10 @@
         <CampoFormulario id="motivo" etiqueta="Motivo" obrigatorio class="md:flex-1" v-slot="{ clases }">
           <input id="motivo" v-model="novaCita.motivo" type="text" required :class="clases" />
         </CampoFormulario>
+        <!-- tarifa en euros: cantidade, así que á dereita e con cifras do mesmo ancho (tabular-nums) -->
+        <CampoFormulario id="tarifa" etiqueta="Tarifa (€)" class="md:w-32" v-slot="{ clases }">
+          <input id="tarifa" v-model="novaCita.tarifa" type="number" step="0.01" min="0" :class="[clases, 'text-right tabular-nums']" />
+        </CampoFormulario>
         <CampoFormulario id="estado" etiqueta="Estado" class="md:w-40" v-slot="{ clases }">
           <select id="estado" v-model="novaCita.estado" :class="clases">
             <option value="pendente">Pendente</option>
@@ -95,17 +99,26 @@
           </select>
         </CampoFormulario>
       </div>
-
-      <!-- fila 3: observacións (texto longo). O textarea leva as súas propias clases: as de CampoFormulario
-           teñen altura fixa (h-10/h-11) e un textarea ten que crecer coas filas -->
-      <CampoFormulario id="observacions" etiqueta="Observacións">
-        <textarea
-          id="observacions"
-          v-model="novaCita.observacions"
-          rows="3"
-          class="w-full resize-y rounded-md border border-borde bg-white px-3 py-2 text-base focus:border-acento focus:ring-3 focus:ring-acento-claro focus:outline-none"
-        ></textarea>
-      </CampoFormulario>
+      <!-- fila 3: diagnóstico e tratamento (texto longo). No móbil un debaixo do outro; desde md lado a lado.
+           Os textarea levan as súas propias clases: as de CampoFormulario teñen altura fixa e un textarea ten que crecer -->
+      <div class="flex flex-col gap-4 md:flex-row">
+        <CampoFormulario id="diagnostico" etiqueta="Diagnóstico" class="md:flex-1">
+          <textarea
+            id="diagnostico"
+            v-model="novaCita.diagnostico"
+            rows="3"
+            class="w-full resize-y rounded-md border border-borde bg-white px-3 py-2 text-base focus:border-acento focus:ring-3 focus:ring-acento-claro focus:outline-none"
+          ></textarea>
+        </CampoFormulario>
+        <CampoFormulario id="tratamiento" etiqueta="Tratamiento" class="md:flex-1">
+          <textarea
+            id="tratamiento"
+            v-model="novaCita.tratamiento"
+            rows="3"
+            class="w-full resize-y rounded-md border border-borde bg-white px-3 py-2 text-base focus:border-acento focus:ring-3 focus:ring-acento-claro focus:outline-none"
+          ></textarea>
+        </CampoFormulario>
+      </div>
 
       <!-- botóns, centrados: no móbil un debaixo do outro a todo o ancho; desde md en liña e do mesmo ancho (md:w-27) -->
       <div class="flex flex-col items-center gap-4">
@@ -137,35 +150,55 @@
           </span>
           <!-- Limpiar ao lado de Gardar (onde xa está a man); fai o mesmo que 🧹 -->
           <BotonAccion variante="secundario" class="w-full md:w-27" @click="limpiarFormCita">Limpiar</BotonAccion>
+          <!-- PDF: xustificante da cita cargada para entregarllo ao paciente. Só cunha cita cargada (✏️);
+               desactivado se hai cambios sen gardar, para que o papel coincida co gardado na BD -->
+          <BotonAccion
+            v-if="editando"
+            variante="secundario"
+            class="w-full md:w-27"
+            :disabled="haiCambiosSenGardar()"
+            :aria-describedby="haiCambiosSenGardar() ? 'axuda-pdf' : undefined"
+            title="Xustificante da cita en PDF"
+            @click="imprimirXustificante"
+          >
+            <Printer class="size-5" aria-hidden="true" /> PDF
+          </BotonAccion>
         </div>
         <!-- texto da axuda debaixo dos botóns: visible por defecto e oculto só cando hai rato (pointer-fine) -->
         <p v-if="motivoNonGardar" id="axuda-gardar" class="text-sm pointer-fine:hidden">{{ motivoNonGardar }}</p>
+        <!-- por que o PDF está desactivado (visible sempre: non hai tooltip para este botón) -->
+        <p v-if="editando && haiCambiosSenGardar()" id="axuda-pdf" class="text-sm">Garda os cambios para imprimir o xustificante.</p>
       </div>
     </form>
 
     <TituloSeccion><ClipboardList class="size-5" aria-hidden="true" /> Listaxe de citas</TituloSeccion>
-    <!-- só as citas do paciente seleccionado -->
-    <p v-if="!pacienteStore.dnipac" class="text-sm italic">
-      Selecciona un paciente na páxina de Pacientes (✏️ ou 🔍) para ver as súas citas.
+
+    <!-- opcións da lista: ordenar, todas as citas e borradas (no móbil, se non caben, unha debaixo da outra) -->
+    <div class="mb-2 flex flex-wrap justify-between gap-2">
+      <label class="flex items-center gap-2 text-sm"><input v-model="ordenarPorData" type="checkbox" /> Ordenar por data</label>
+      <!-- marcado: a lista mostra todas as citas do sistema (todos os pacientes e doctores) -->
+      <label class="flex items-center gap-2 text-sm"><input v-model="mostrarTodas" type="checkbox" /> Mostrar todas as citas</label>
+      <label class="flex items-center gap-2 text-sm"><input v-model="mostrarBorradas" type="checkbox" /> Mostrar as citas borradas</label>
+    </div>
+
+    <!-- sen "todas" e sen paciente seleccionado non hai lista que mostrar -->
+    <p v-if="!mostrarTodas && !pacienteStore.dnipac" class="text-sm italic">
+      Selecciona un paciente na páxina de Pacientes (✏️ ou 🔍) para ver as súas citas, ou marca "Mostrar todas as citas".
     </p>
     <template v-else>
-      <!-- de quen son as citas: centrado e máis grande (por iso a táboa xa non leva a columna Paciente) -->
-      <p class="mb-4 text-center text-lg font-semibold text-titulo">
+      <!-- de quen son as citas: centrado e máis grande -->
+      <p v-if="mostrarTodas" class="mb-4 text-center text-lg font-semibold text-titulo">Todas as citas</p>
+      <p v-else class="mb-4 text-center text-lg font-semibold text-titulo">
         Citas de
         <!-- só o nome destacado -->
         <span class="rounded-md bg-banda px-2 py-0.5">{{ pacienteStore.nomepac }} {{ pacienteStore.apelpac }}</span>
         ({{ pacienteStore.dnipac }})
       </p>
 
-      <!-- opcións da lista: ordenar á esquerda, mostrar borradas á dereita (no móbil, se non caben, unha debaixo da outra) -->
-      <div class="mb-2 flex flex-wrap justify-between gap-2">
-        <label class="flex items-center gap-2 text-sm"><input v-model="ordenarPorData" type="checkbox" /> Ordenar por data</label>
-        <label class="flex items-center gap-2 text-sm"><input v-model="mostrarBorradas" type="checkbox" /> Mostrar as citas borradas </label> <!-- Filter Step 2.3 creates the checkbox-->
-      </div>
       <!-- no móbil a táboa desprázase en horizontal dentro do seu contedor (non a páxina enteira) -->
-      <div v-if="citasPaciente.length > 0" class="overflow-x-auto">
+      <div v-if="citasLista.length > 0" class="overflow-x-auto">
         <table class="w-full border-collapse text-sm">
-          <caption class="sr-only">Citas do paciente</caption>
+          <caption class="sr-only">{{ mostrarTodas ? "Todas as citas" : "Citas do paciente" }}</caption>
           <thead class="bg-acento-suave text-titulo">
             <tr>
               <th v-for="cabeceira in cabeceiras" :key="cabeceira" scope="col" class="border border-acento-claro p-3 font-semibold">
@@ -174,16 +207,21 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="c in citasPaciente" :key="c._id" class="bg-white">
+            <tr v-for="c in citasLista" :key="c._id" class="bg-white">
               <!-- datas e horas centradas; o texto á esquerda -->
               <td class="border border-acento-claro p-3 text-center">{{ formatearData(c.fecha) }}</td>
               <td class="border border-acento-claro p-3 text-center">{{ c.hora }}</td>
+              <!-- DNI do paciente só con "todas as citas" (se non, todas son do paciente do título) -->
+              <td v-if="mostrarTodas" class="border border-acento-claro p-3 text-center">{{ c.pacienteDNI }}</td>
               <!-- doctorId vén "populado" do backend: é o doctor enteiro, non só o _id -->
               <td class="border border-acento-claro p-3">{{ c.doctorId ? `${c.doctorId.nomedoc} ${c.doctorId.apeldoc}` : "(doctor eliminado)" }}</td>
               <td class="border border-acento-claro p-3">{{ c.doctorId?.espedoc }}</td>
               <td class="border border-acento-claro p-3">{{ c.motivo }}</td>
               <td class="border border-acento-claro p-3">{{ c.estado }}</td>
-              <td class="border border-acento-claro p-3">{{ c.observacions }}</td>
+              <td class="border border-acento-claro p-3">{{ c.diagnostico }}</td>
+              <td class="border border-acento-claro p-3">{{ c.tratamiento }}</td>
+              <!-- cantidade: á dereita e con cifras do mesmo ancho -->
+              <td class="border border-acento-claro p-3 text-right tabular-nums">{{ formatearTarifa(c.tarifa) }}</td>
               <td class="border border-acento-claro p-3">
                 <!-- ✏️ carga a cita no formulario para editala (as citas non se borran: gárdanse sempre, só cambia o estado) -->
                 <div class="flex justify-center">
@@ -196,7 +234,7 @@
           </tbody>
         </table>
       </div>
-      <p v-else>Este paciente aínda non ten citas.</p>
+      <p v-else>{{ mostrarTodas ? "Non hai citas." : "Este paciente aínda non ten citas." }}</p>
     </template>
   </TarxetaPanel>
 </template>
@@ -207,18 +245,24 @@
 
 import { ref, reactive, computed, onMounted } from "vue";
 import { getCitas, saveCita, modifyCita } from "../api/citas.js";
+import { getPacienteByDni } from "../api/pacientes.js";
 import { usePacienteStore } from "../store/pacienteStore.js";
 import { useDoctorStore } from "../store/doctorStore.js";
 import { alertaExito, alertaError, alertaConfirmacion, alertaInfo } from "../utils/alertas.js";
-import { CalendarDays, ClipboardList, BrushCleaning, Pencil } from "lucide-vue-next";
+import { CalendarDays, ClipboardList, BrushCleaning, Pencil, Printer } from "lucide-vue-next";
 import TarxetaPanel from "./comun/TarxetaPanel.vue";
 import TituloSeccion from "./comun/TituloSeccion.vue";
 import CampoFormulario from "./comun/CampoFormulario.vue";
 import BotonAccion from "./comun/BotonAccion.vue";
 import CaixaErros from "./comun/CaixaErros.vue";
+import { generarXustificante } from "../utils/pdf.js";
 
-// cabeceiras da táboa (así o <th> escríbese unha soa vez)
-const cabeceiras = ["Data", "Hora", "Doctor", "Especialidade", "Motivo", "Estado", "Observacións", "Accións"];
+// cabeceiras da táboa (así o <th> escríbese unha soa vez); con "todas as citas" engádese a columna do DNI do paciente
+const cabeceiras = computed(() => [
+  "Data", "Hora",
+  ...(mostrarTodas.value ? ["DNI paciente"] : []),
+  "Doctor", "Especialidade", "Motivo", "Estado", "Diagnóstico", "Tratamiento", "Tarifa", "Accións",
+]);
 
 // paciente e doctor seleccionados nas súas páxinas (Pinia): de aquí sae para quen e con quen é a cita
 const pacienteStore = usePacienteStore();
@@ -234,10 +278,11 @@ const editando = ref(false); // true cando hai unha cita cargada (✏️): Garda
 // checkbox "Ordenar por data": true = a lista vai da cita máis afastada no futuro á máis antiga, co separador "Hoxe"
 // (o separador "Hoxe" engádese despois)
 const ordenarPorData = ref(false);
+const mostrarTodas = ref(false); // true = a táboa mostra todas as citas do sistema, non só as do paciente seleccionado
 const mostrarBorradas = ref(false); // filtrar step 2.1 variable for the checkbox =>  true = a táboa tamén mostra as citas borradas 
 
 // campos da cita que se editan no formulario
-const CAMPOS = ["fecha", "hora", "motivo", "estado", "observacions"];
+const CAMPOS = ["fecha", "hora", "motivo", "estado", "diagnostico", "tratamiento", "tarifa"];
 // copia dos datos da cita tal como se cargou (✏️), para saber se hai cambios sen gardar; null se é unha cita nova
 const copiaOrixinal = ref(null);
 
@@ -249,7 +294,9 @@ const novaCita = reactive({
   hora: "",
   motivo: "",
   estado: "pendente",
-  observacions: "",
+  diagnostico: "",
+  tratamiento: "",
+  tarifa: "",
 });
 
 // data coa que se cargou a cita ao editala (✏️): ao editar pódese deixar a data pasada como estaba
@@ -262,10 +309,10 @@ const dataPasada = computed(() =>
   !(editando.value && novaCita.fecha === dataOrixinal.value)
 );
 
-// citas do paciente seleccionado, ordenadas por data e hora (punto 2: non se ven as doutros pacientes)
-const citasPaciente = computed(() =>
+// citas da táboa, ordenadas por data e hora: as do paciente seleccionado, ou todas se está marcado "Mostrar todas as citas"
+const citasLista = computed(() =>
   citas.value
-    .filter((c) => c.pacienteDNI === pacienteStore.dnipac)
+    .filter((c) => mostrarTodas.value || c.pacienteDNI === pacienteStore.dnipac)
     // "Ordenar por data" marcado: da máis afastada no futuro á máis antiga; sen marcar: da máis antiga á máis nova
     .sort((a, b) =>
       ordenarPorData.value
@@ -341,11 +388,24 @@ async function guardarCita() {
   await cargarDatos(); // a cita nova ou modificada aparece na táboa
 }
 
-// botón ✏️: carga a cita no formulario para editala. O seu doctor pasa a ser o doctor seleccionado,
-// así o formulario mostra (e garda) o doctor correcto. Se hai cambios sen gardar, pregunta antes
+// botón ✏️: carga a cita no formulario para editala. O seu paciente e o seu doctor pasan a ser os seleccionados,
+// así o formulario mostra (e garda) os correctos. Se hai cambios sen gardar, pregunta antes
 async function editarCita(cita) {
   if (!(await confirmarDescartar())) {
     return;
+  }
+  // con "todas as citas" a cita pode ser doutro paciente: seleccionámolo (a cita só garda o DNI, así que
+  // pedimos o nome ao backend). Se non, ao gardar a cita pasaría ao paciente que estaba seleccionado
+  if (cita.pacienteDNI !== pacienteStore.dnipac) {
+    try {
+      pacienteStore.seleccionarPaciente(await getPacienteByDni(cita.pacienteDNI));
+    } catch (error) {
+      console.error("Erro ao cargar o paciente da cita:", error);
+      alertaError(error.response?.status === 404
+        ? "O paciente desta cita xa non existe."
+        : "Non se puido cargar o paciente da cita. Contacte co administrador do sistema.");
+      return;
+    }
   }
   baleirarCita();
   CAMPOS.forEach((campo) => {
@@ -360,6 +420,7 @@ async function editarCita(cita) {
   }
   editando.value = true;
   copiaOrixinal.value = fotoFormulario(); // para saber despois se se cambiou algo
+  window.scrollTo({ top: 0, behavior: "smooth" }); // sube ao principio da páxina para ver o formulario
 }
 
 // botóns 🧹 e Limpiar: baleira o formulario e deselecciona paciente e doctor (punto 8).
@@ -371,6 +432,20 @@ async function limpiarFormCita() {
   baleirarCita();
   pacienteStore.limpiarPaciente();
   doctorStore.limpiarDoctor();
+}
+
+// botón PDF: xustificante da cita cargada para entregarllo ao paciente (sen tarifa, diagnóstico nin tratamento).
+// O botón só está activo sen cambios sen gardar, así que os datos do formulario son os da BD
+function imprimirXustificante() {
+  generarXustificante("Xustificante de cita", [
+    ["Paciente", `${pacienteStore.nomepac} ${pacienteStore.apelpac}`],
+    ["DNI/NIE", pacienteStore.dnipac],
+    ["Doctor", doctorStore._id ? `${doctorStore.nomedoc} ${doctorStore.apeldoc}` : "(doctor eliminado)"],
+    ["Especialidade", doctorStore.espedoc ?? ""],
+    ["Data", formatearData(novaCita.fecha)],
+    ["Hora", novaCita.hora],
+    ["Motivo", novaCita.motivo],
+  ]);
 }
 
 // Zona de funcións auxiliares
@@ -413,7 +488,7 @@ function haiCambiosSenGardar() {
   if (copiaOrixinal.value !== null) {
     return fotoFormulario() !== copiaOrixinal.value;
   }
-  return ["fecha", "hora", "motivo", "observacions"].some((campo) => String(novaCita[campo]).trim() !== "")
+  return ["fecha", "hora", "motivo", "diagnostico", "tratamiento", "tarifa"].some((campo) => String(novaCita[campo]).trim() !== "")
     || novaCita.estado !== "pendente";
 }
 
@@ -424,6 +499,13 @@ async function confirmarDescartar() {
   }
   const confirmacion = await alertaConfirmacion("Hai datos sen gardar que se perderán. Queres descartalos?");
   return confirmacion.isConfirmed;
+}
+
+// 25 → "25,00 €" (baleiro se a cita non ten tarifa)
+function formatearTarifa(tarifa) {
+  return tarifa === null || tarifa === undefined || tarifa === ""
+    ? ""
+    : Number(tarifa).toLocaleString("es-ES", { style: "currency", currency: "EUR" });
 }
 
 // "2026-11-20" → "20/11/2026"

@@ -1,4 +1,5 @@
 
+import { Double } from "mongodb";
 import mongoose from "mongoose";
 
 const CitaSchema = new mongoose.Schema(
@@ -16,10 +17,10 @@ const CitaSchema = new mongoose.Schema(
         fecha: { type: String, required: true },
         hora: { type: String, required: true },
         motivo: { type: String, required: true },
-        observacions: {
-            type: String,
-            default: ""
-        },
+        diagnostico: {type: String,default: "" },
+        tratamiento: {type: String,default: "" },
+        tarifa: {type: Double,},
+
         estado: {
             type: String,
             default: "pendente"
