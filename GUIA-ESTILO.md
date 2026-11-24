@@ -97,6 +97,7 @@ Foco (teclado): `focus-visible:outline-3 focus-visible:outline-offset-2 focus-vi
 - Erro: `border-perigo bg-perigo-suave` + anel `ring-perigo`.
 - Desactivado: `bg-desactivado text-texto-desactivado`.
 - Etiqueta: `text-sm font-semibold text-titulo`, á esquerda do campo en pantalla ancha e enriba en móbil. Obrigatorio: `*` en `text-perigo`.
+  Excepción: nos formularios onde todos os campos son obrigatorios (Acceso, Rexistro) non se pon o `*` (o atributo `required` segue avisando aos lectores de pantalla).
 
 ### Caixa de erros (enriba de Gardar)
 `border-l-4 border-perigo bg-perigo-suave text-perigo text-sm px-4 py-2`. Cada erro cun exemplo válido.

@@ -8,11 +8,11 @@
     <form class="flex flex-col gap-4" @submit.prevent="entrar">
       <!-- accédese co DNI/NIE (o mesmo co que se rexistra); centrado, coma todos os DNI.
            autocomplete: así o navegador e os xestores de contrasinais recoñecen o formulario de acceso -->
-      <CampoFormulario id="dni" etiqueta="DNI/NIE" obrigatorio v-slot="{ clases }">
+      <CampoFormulario id="dni" etiqueta="DNI/NIE" v-slot="{ clases }">
         <input id="dni" v-model="dni" type="text" autocomplete="username" required :class="[clases, 'text-center']" />
       </CampoFormulario>
 
-      <CampoFormulario id="contrasinal" etiqueta="Contrasinal" obrigatorio v-slot="{ clases }">
+      <CampoFormulario id="contrasinal" etiqueta="Contrasinal" v-slot="{ clases }">
         <input
           id="contrasinal"
           v-model="contrasinal"
