@@ -21,13 +21,18 @@
           :id="`tarxeta-${servizo.id}`"
           type="button"
           class="overflow-hidden rounded-xl bg-white text-left shadow-md transition hover:shadow-xl motion-safe:hover:-translate-y-1"
-          :class="seleccionado?.id === servizo.id ? 'ring-3 ring-acento' : ''"
+          :class="[
+            seleccionado?.id === servizo.id ? 'ring-3 ring-acento' : '',
+            /* agochada ata que entra na pantalla; con movemento reducido sempre visible e sen animación */
+            aparecidas.has(`tarxeta-${servizo.id}`) ? 'motion-safe:animate-entrada' : 'motion-safe:opacity-0',
+          ]"
+          :style="{ animationDelay: `${atrasos[`tarxeta-${servizo.id}`] ?? 0}ms` }"
           :aria-expanded="seleccionado?.id === servizo.id"
           :aria-controls="seleccionado?.id === servizo.id ? 'detalle-servizo' : undefined"
           @click="alternarServizo(servizo, $event)"
         >
           <!-- alt="" porque a foto é decorativa: o nome do servizo xa está no texto do botón -->
-          <img :src="servizo.imaxe" alt="" width="600" height="400" loading="lazy" class="h-48 w-full object-cover" />
+          <img :src="servizo.imaxe" alt="" width="600" height="400" loading="eager" class="h-48 w-full object-cover" />
           <span class="block p-4">
             <span class="block text-lg font-semibold text-titulo">{{ servizo.nome }}</span>
             <span class="block text-sm">{{ servizo.subtitulo }}</span>
@@ -73,7 +78,7 @@
 <script setup>
 import TarxetaPanel from "./comun/TarxetaPanel.vue";
 import { servizos } from "../data/servizos.js"; //step 4.2 tell this file, where the data lives
-import { ref, nextTick, onMounted } from "vue";
+import { ref, reactive, nextTick, onMounted, onBeforeUnmount } from "vue";
 import { obtenerTarifas } from "../api/tarifas.js";
 import BotonAccion from "./comun/BotonAccion.vue"; //step 6.1 inport a commun element
 import { X, Check } from "lucide-vue-next";
@@ -84,6 +89,39 @@ const seleccionado = ref(null);
 
 // tarifas cargadas do backend (/api/tarifas); baleira se aínda non chegaron ou se fallou a carga
 const tarifas = ref([]);
+
+// ids das tarxetas que xa entraron na pantalla (as outras seguen agochadas)
+const aparecidas = ref(new Set());
+
+// atraso da animación de cada tarxeta en ms (id → ms), para que aparezan unha tras outra
+const atrasos = reactive({});
+
+// separación entre unha tarxeta e a seguinte do mesmo grupo
+const PASO_MS = 105;
+
+// vixía que avisa cando unha tarxeta entra na pantalla (ao abrir a páxina ou ao baixar)
+let vixia = null;
+
+// ao montar: vixiamos cada tarxeta; as que entran xuntas aparecen en orde, unha tras outra (PASO_MS)
+onMounted(() => {
+  vixia = new IntersectionObserver(
+    (entradas) => {
+      let orde = 0;
+      for (const entrada of entradas) {
+        if (!entrada.isIntersecting) continue;
+        atrasos[entrada.target.id] = orde * PASO_MS;
+        orde++;
+        aparecidas.value.add(entrada.target.id);
+        vixia.unobserve(entrada.target); // só aparece unha vez
+      }
+    },
+    { threshold: 0.2 } // aparece cando se ve polo menos un 20 % da tarxeta
+  );
+  servizos.forEach((s) => vixia.observe(document.getElementById(`tarxeta-${s.id}`)));
+});
+
+// ao saír da páxina deixamos de vixiar
+onBeforeUnmount(() => vixia?.disconnect());
 
 // ao entrar na páxina pedimos as tarifas; se fallan non avisamos: só non se ven os prezos
 onMounted(async () => {

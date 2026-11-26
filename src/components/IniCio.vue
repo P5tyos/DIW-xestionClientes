@@ -1,7 +1,8 @@
 <template>
   <div class="w-full px-4 py-8 text-left md:px-8 md:py-12">
-    <!-- vídeo de portada: só imaxe, sen texto enriba; o contido da páxina vai debaixo -->
-    <figure class="mb-8">
+    <!-- vídeo de portada: só imaxe, sen texto enriba; o contido da páxina vai debaixo.
+         Ao abrir a páxina entra desenfocado e sube (animate-entrada, en style.css); con movemento reducido aparece sen máis -->
+    <figure class="mb-8 motion-safe:animate-entrada">
       <!-- marco do vídeo: 60 % da altura da pantalla, así debaixo aínda asoma o contido
            (h-[60vh] é un valor acordado para esta páxina, excepción á regra de non inventar valores) -->
       <div class="relative h-[60vh] min-h-60 overflow-hidden rounded-xl bg-titulo shadow-md">
